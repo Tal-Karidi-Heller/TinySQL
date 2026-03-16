@@ -132,4 +132,7 @@ Command Parser::get_commands()
             throw std::invalid_argument("At the end of a SELECT query a WHERE must come.");
         }
     }
+    else {
+        throw std::invalid_argument("Not an available command.");
+    }
 }

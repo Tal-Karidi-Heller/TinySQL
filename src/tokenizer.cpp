@@ -63,6 +63,8 @@ std::vector<Token> tokenize_query(std::string &query)
     currentToken.value = "";
     currentToken.type = Token::Type::UNDEFINED;
 
+    std::cout << "Starting\n";
+
     for (char &c : query)
     {
 
@@ -83,7 +85,7 @@ std::vector<Token> tokenize_query(std::string &query)
                 {
                     currentToken.type = Token::Type::KEYWORD;
                 }
-                else if (indicating_identifier(output[output.size() - 1].value) == true)
+                else if (output.size() > 1 && indicating_identifier(output[output.size() - 1].value) == true)
                 {
                     currentToken.type = Token::Type::IDENTIFIER;
                 }
@@ -110,13 +112,15 @@ std::vector<Token> tokenize_query(std::string &query)
         }
     }
 
+    std::cout << currentToken.value << "\n";
+
     if (!currentToken.value.empty())
     {
         if (is_keyword(currentToken.value))
         {
             currentToken.type = Token::Type::KEYWORD;
         }
-        else if (indicating_identifier(output[output.size() - 1].value) == true)
+        else if (output.size() > 1 && indicating_identifier(output[output.size() - 1].value) == true)
         {
             currentToken.type = Token::Type::IDENTIFIER;
         }
@@ -124,7 +128,7 @@ std::vector<Token> tokenize_query(std::string &query)
         {
             currentToken.type = Token::Type::LITERAL;
         }
-
+        std::cout << "pushing " << currentToken.value;
         output.push_back(currentToken);
     }
 
