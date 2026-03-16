@@ -1,0 +1,116 @@
+Start testing: Mar 15 23:13 IST
+----------------------------------------------------------
+1/2 Testing: HelloTest.BasicAssertions
+1/2 Test: HelloTest.BasicAssertions
+Command: "/Users/tal/Desktop/TinySql/build/test_example" "--gtest_filter=HelloTest.BasicAssertions" "--gtest_also_run_disabled_tests"
+Directory: /Users/tal/Desktop/TinySql/build
+"HelloTest.BasicAssertions" start time: Mar 15 23:13 IST
+Output:
+----------------------------------------------------------
+Running main() from /Users/tal/Desktop/TinySql/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = HelloTest.BasicAssertions
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HelloTest
+[ RUN      ] HelloTest.BasicAssertions
+[       OK ] HelloTest.BasicAssertions (0 ms)
+[----------] 1 test from HelloTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"HelloTest.BasicAssertions" end time: Mar 15 23:13 IST
+"HelloTest.BasicAssertions" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: TokenizerTests.SelectTest
+2/2 Test: TokenizerTests.SelectTest
+Command: "/Users/tal/Desktop/TinySql/build/test_tokenizer" "--gtest_filter=TokenizerTests.SelectTest" "--gtest_also_run_disabled_tests"
+Directory: /Users/tal/Desktop/TinySql/build
+"TokenizerTests.SelectTest" start time: Mar 15 23:13 IST
+Output:
+----------------------------------------------------------
+Running main() from /Users/tal/Desktop/TinySql/build/_deps/googletest-src/googletest/src/gtest_main.cc
+Note: Google Test filter = TokenizerTests.SelectTest
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from TokenizerTests
+[ RUN      ] TokenizerTests.SelectTest
+c = 'S'
+c is not symbol
+c = 'E'
+c is not symbol
+c = 'L'
+c is not symbol
+c = 'E'
+c is not symbol
+c = 'C'
+c is not symbol
+c = 'T'
+c is not symbol
+c = ' '
+c is a symbol
+added ' '
+c = 'a'
+c is not symbol
+c = ','
+c is a symbol
+added ','
+c = ' '
+c is a symbol
+added ' '
+c = 'b'
+c is not symbol
+c = ','
+c is a symbol
+added ','
+c = ' '
+c is a symbol
+added ' '
+c = 'c'
+c is not symbol
+c = ' '
+c is a symbol
+added ' '
+c = 'F'
+c is not symbol
+c = 'R'
+c is not symbol
+c = 'O'
+c is not symbol
+c = 'M'
+c is not symbol
+c = ' '
+c is a symbol
+added ' '
+c = 't'
+c is not symbol
+c = 'a'
+c is not symbol
+c = 'b'
+c is not symbol
+c = 'l'
+c is not symbol
+c = 'e'
+c is not symbol
+c = '1'
+c is not symbol
+vecotor[1] = ' '[       OK ] TokenizerTests.SelectTest (0 ms)
+[----------] 1 test from TokenizerTests (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TokenizerTests.SelectTest" end time: Mar 15 23:13 IST
+"TokenizerTests.SelectTest" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Mar 15 23:13 IST

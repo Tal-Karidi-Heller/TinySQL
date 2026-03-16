@@ -1,0 +1,5 @@
+if(EXISTS "/Users/tal/Desktop/TinySql/build/test_example[1]_tests.cmake")
+  include("/Users/tal/Desktop/TinySql/build/test_example[1]_tests.cmake")
+else()
+  add_test(test_example_NOT_BUILT test_example_NOT_BUILT)
+endif()
