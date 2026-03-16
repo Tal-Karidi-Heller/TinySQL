@@ -4,12 +4,12 @@
 #include <vector>
 
 struct Token {
-    enum Type {KEYWORD, IDENTIFIER, LITERAL, SYMBOL, UNDEFINED};
+    enum Type {KEYWORD, IDENTIFIER, LITERAL, SYMBOL, UNDEFINED, OPERATOR};
     Type type;
     std::string value;
 };
 
-std::vector<Token> tokenize_query(std::string query);
+std::vector<Token> tokenize_query(std::string& query);
 
 void print_vector(std::vector<Token> vector);
 

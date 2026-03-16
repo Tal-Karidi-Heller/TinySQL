@@ -14,11 +14,15 @@ const std::string keyword_arguments[] = {
     "DELETE",
     "FROM",
     "DROP",
-    "TABLE"};
+    "TABLE",
+    "*"};
+
+const std::string operators[] = {
+    "="};
 
 bool is_keyword(std::string element)
 {
-    for (std::string keyword : keyword_arguments)
+    for (const std::string &keyword : keyword_arguments)
     {
         if (keyword == element)
         {
@@ -26,6 +30,18 @@ bool is_keyword(std::string element)
         }
     }
 
+    return false;
+}
+
+bool is_operator(std::string &element)
+{
+    for (const std::string &op : operators)
+    {
+        if (op == element)
+        {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -39,7 +55,7 @@ bool indicating_identifier(std::string lastValue)
     return false;
 }
 
-std::vector<Token> tokenize_query(std::string query)
+std::vector<Token> tokenize_query(std::string &query)
 {
     std::vector<Token> output;
 
@@ -47,18 +63,18 @@ std::vector<Token> tokenize_query(std::string query)
     currentToken.value = "";
     currentToken.type = Token::Type::UNDEFINED;
 
-    for (char c : query)
+    for (char &c : query)
     {
 
-        std::cout << "c = '" << c << '\'' << '\n';
+        // std::cout << "c = '" << c << '\'' << '\n';
         if (c != ',' && c != ' ' && c != '(' && c != ')')
         {
-            std::cout << "c is not symbol" << '\n';
+            // std::cout << "c is not symbol" << '\n';
             currentToken.value += c;
         }
         else
         {
-            std::cout << "c is a symbol" << '\n';
+            // std::cout << "c is a symbol" << '\n';
             // Finished the current token.
             // Segmenting the current token.
             if (!currentToken.value.empty())
@@ -71,6 +87,9 @@ std::vector<Token> tokenize_query(std::string query)
                 {
                     currentToken.type = Token::Type::IDENTIFIER;
                 }
+                else if(is_operator(currentToken.value)) {
+                    currentToken.type = Token::Type::OPERATOR;
+                }
                 else
                 {
                     currentToken.type = Token::Type::LITERAL;
@@ -82,12 +101,31 @@ std::vector<Token> tokenize_query(std::string query)
             currentToken.value = c;
             currentToken.type = Token::Type::SYMBOL;
 
-            std::cout << "added '" << currentToken.value << "'\n";
+            // std::cout << "added '" << currentToken.value << "'\n";
 
             output.push_back(currentToken);
 
             currentToken.value = "";
+            currentToken.type = Token::Type::SYMBOL;
         }
+    }
+
+    if (!currentToken.value.empty())
+    {
+        if (is_keyword(currentToken.value))
+        {
+            currentToken.type = Token::Type::KEYWORD;
+        }
+        else if (indicating_identifier(output[output.size() - 1].value) == true)
+        {
+            currentToken.type = Token::Type::IDENTIFIER;
+        }
+        else
+        {
+            currentToken.type = Token::Type::LITERAL;
+        }
+
+        output.push_back(currentToken);
     }
 
     return output;
@@ -105,6 +143,9 @@ std::ostream &operator<<(std::ostream &os, const Token::Type &type)
         break;
     case Token::LITERAL:
         os << "LITERAL";
+        break;
+    case Token::OPERATOR:
+        os << "OPERATOR";
         break;
     case Token::SYMBOL:
         os << "SYMBOL";
