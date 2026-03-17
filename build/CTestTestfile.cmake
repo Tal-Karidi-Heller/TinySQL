@@ -6,4 +6,5 @@
 # testing this directory and lists subdirectories to be tested as well.
 include("/Users/tal/Desktop/TinySql/build/test_example[1]_include.cmake")
 include("/Users/tal/Desktop/TinySql/build/test_tokenizer[1]_include.cmake")
+include("/Users/tal/Desktop/TinySql/build/test_parser[1]_include.cmake")
 subdirs("_deps/googletest-build")

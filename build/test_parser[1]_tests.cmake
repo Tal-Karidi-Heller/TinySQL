@@ -1,0 +1,7 @@
+add_test([=[ParserTests.SimpleSelectTest]=]  /Users/tal/Desktop/TinySql/build/test_parser [==[--gtest_filter=ParserTests.SimpleSelectTest]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[ParserTests.SimpleSelectTest]=]  PROPERTIES DEF_SOURCE_LINE /Users/tal/Desktop/TinySql/tests/test_parser.cpp:6 WORKING_DIRECTORY /Users/tal/Desktop/TinySql/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+add_test([=[ParserTests.SelectAllTest]=]  /Users/tal/Desktop/TinySql/build/test_parser [==[--gtest_filter=ParserTests.SelectAllTest]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[ParserTests.SelectAllTest]=]  PROPERTIES DEF_SOURCE_LINE /Users/tal/Desktop/TinySql/tests/test_parser.cpp:38 WORKING_DIRECTORY /Users/tal/Desktop/TinySql/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+add_test([=[ParserTests.WhereSelectTest]=]  /Users/tal/Desktop/TinySql/build/test_parser [==[--gtest_filter=ParserTests.WhereSelectTest]==] --gtest_also_run_disabled_tests)
+set_tests_properties([=[ParserTests.WhereSelectTest]=]  PROPERTIES DEF_SOURCE_LINE /Users/tal/Desktop/TinySql/tests/test_parser.cpp:66 WORKING_DIRECTORY /Users/tal/Desktop/TinySql/build SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
+set(  test_parser_TESTS ParserTests.SimpleSelectTest ParserTests.SelectAllTest ParserTests.WhereSelectTest)

@@ -1,5 +1,6 @@
 /Users/tal/Desktop/TinySql/build/CMakeFiles/test_example.dir
 /Users/tal/Desktop/TinySql/build/CMakeFiles/test_tokenizer.dir
+/Users/tal/Desktop/TinySql/build/CMakeFiles/test_parser.dir
 /Users/tal/Desktop/TinySql/build/CMakeFiles/test.dir
 /Users/tal/Desktop/TinySql/build/CMakeFiles/edit_cache.dir
 /Users/tal/Desktop/TinySql/build/CMakeFiles/rebuild_cache.dir

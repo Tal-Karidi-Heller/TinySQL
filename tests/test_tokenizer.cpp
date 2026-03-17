@@ -3,8 +3,9 @@
 #include <vector>
 
 TEST(TokenizerTests, SelectTest) {
+    std::string query = "SELECT a, b, c FROM table1";
     std::vector<Token> vector = tokenize_query(
-        "SELECT a, b, c FROM table1"
+        query
     );
 
     EXPECT_EQ(vector[0].value, "SELECT");

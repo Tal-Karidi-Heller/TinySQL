@@ -18,16 +18,28 @@ using Value = std::variant<int, std::string>;
 //     std::vector<Value[]> rows; 
 // };
 
+struct SingleCondition {
+    std::string where_column;
+    std::string where_value;
+    
+    enum Operator {AND, OR, NONE};
+    Operator op;
+
+    SingleCondition() : op(Operator::NONE) {
+
+    }
+};
+
 struct SelectCommand {
     std::vector<std::string> columns;
     bool all = false;
     std::string table_name;
     bool has_where_condition = false;
-    std::string where_column;
-    std::string where_value;
+    std::vector<SingleCondition> where_conditions;
 
     SelectCommand() : columns(0) {}
 };
+
 
 struct CreateTableCommand {
     std::string name;
@@ -55,7 +67,15 @@ public:
     Parser(std::vector<Token>& tokenized_query);
     Command get_commands();
     static bool skipSymbols(std::vector<Token>::iterator& it, const std::vector<Token>::iterator& end);
+    
+    static std::vector<SingleCondition> _get_where_conditions(std::vector<Token>::iterator& start, std::vector<Token>::iterator& end, std::vector<SingleCondition>& output);
+    
+    static std::vector<SingleCondition> get_where_conditions(std::vector<Token>::iterator start, std::vector<Token>::iterator end);
 };
 
+std::ostream &operator<<(std::ostream &os, const std::vector<std::string> &vector);
+std::ostream &operator<<(std::ostream &os, const SingleCondition &condition);
+std::ostream &operator<<(std::ostream &os, const std::vector<SingleCondition> &conditions);
+std::ostream &operator<<(std::ostream &os, const SelectCommand &command);
 
 #endif

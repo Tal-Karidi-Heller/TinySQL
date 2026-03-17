@@ -76,29 +76,29 @@ CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o: CMakeFiles/test_tokeni
 CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o: /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp
 CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o: CMakeFiles/test_tokenizer.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/tal/Desktop/TinySql/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o -MF CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o.d -o CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o -c /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o -MF CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o.d -o CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.o -c /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp
 
 CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp > CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp > CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.i
 
 CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp -o CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/tests/test_tokenizer.cpp -o CMakeFiles/test_tokenizer.dir/tests/test_tokenizer.cpp.s
 
 CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o: CMakeFiles/test_tokenizer.dir/flags.make
 CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o: /Users/tal/Desktop/TinySql/src/tokenizer.cpp
 CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o: CMakeFiles/test_tokenizer.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/tal/Desktop/TinySql/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o -MF CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o.d -o CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o -c /Users/tal/Desktop/TinySql/src/tokenizer.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o -MF CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o.d -o CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o -c /Users/tal/Desktop/TinySql/src/tokenizer.cpp
 
 CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/src/tokenizer.cpp > CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/src/tokenizer.cpp > CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.i
 
 CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/src/tokenizer.cpp -o CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/src/tokenizer.cpp -o CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.s
 
 # Object files for target test_tokenizer
 test_tokenizer_OBJECTS = \

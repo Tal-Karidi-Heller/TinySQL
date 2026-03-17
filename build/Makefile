@@ -198,6 +198,19 @@ test_tokenizer/fast:
 .PHONY : test_tokenizer/fast
 
 #=============================================================================
+# Target rules for targets named test_parser
+
+# Build rule for target.
+test_parser: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_parser
+.PHONY : test_parser
+
+# fast build rule for target.
+test_parser/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/build
+.PHONY : test_parser/fast
+
+#=============================================================================
 # Target rules for targets named gmock
 
 # Build rule for target.
@@ -249,12 +262,37 @@ gtest_main/fast:
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
 .PHONY : gtest_main/fast
 
+src/parser.o: src/parser.cpp.o
+.PHONY : src/parser.o
+
+# target to build an object file
+src/parser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/parser.cpp.o
+.PHONY : src/parser.cpp.o
+
+src/parser.i: src/parser.cpp.i
+.PHONY : src/parser.i
+
+# target to preprocess a source file
+src/parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/parser.cpp.i
+.PHONY : src/parser.cpp.i
+
+src/parser.s: src/parser.cpp.s
+.PHONY : src/parser.s
+
+# target to generate assembly for a file
+src/parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/parser.cpp.s
+.PHONY : src/parser.cpp.s
+
 src/tokenizer.o: src/tokenizer.cpp.o
 .PHONY : src/tokenizer.o
 
 # target to build an object file
 src/tokenizer.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tokenizer.dir/build.make CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/tokenizer.cpp.o
 .PHONY : src/tokenizer.cpp.o
 
 src/tokenizer.i: src/tokenizer.cpp.i
@@ -263,6 +301,7 @@ src/tokenizer.i: src/tokenizer.cpp.i
 # target to preprocess a source file
 src/tokenizer.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tokenizer.dir/build.make CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/tokenizer.cpp.i
 .PHONY : src/tokenizer.cpp.i
 
 src/tokenizer.s: src/tokenizer.cpp.s
@@ -271,6 +310,7 @@ src/tokenizer.s: src/tokenizer.cpp.s
 # target to generate assembly for a file
 src/tokenizer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tokenizer.dir/build.make CMakeFiles/test_tokenizer.dir/src/tokenizer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/src/tokenizer.cpp.s
 .PHONY : src/tokenizer.cpp.s
 
 tests/test_example.o: tests/test_example.cpp.o
@@ -296,6 +336,30 @@ tests/test_example.s: tests/test_example.cpp.s
 tests/test_example.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_example.dir/build.make CMakeFiles/test_example.dir/tests/test_example.cpp.s
 .PHONY : tests/test_example.cpp.s
+
+tests/test_parser.o: tests/test_parser.cpp.o
+.PHONY : tests/test_parser.o
+
+# target to build an object file
+tests/test_parser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/tests/test_parser.cpp.o
+.PHONY : tests/test_parser.cpp.o
+
+tests/test_parser.i: tests/test_parser.cpp.i
+.PHONY : tests/test_parser.i
+
+# target to preprocess a source file
+tests/test_parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/tests/test_parser.cpp.i
+.PHONY : tests/test_parser.cpp.i
+
+tests/test_parser.s: tests/test_parser.cpp.s
+.PHONY : tests/test_parser.s
+
+# target to generate assembly for a file
+tests/test_parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_parser.dir/build.make CMakeFiles/test_parser.dir/tests/test_parser.cpp.s
+.PHONY : tests/test_parser.cpp.s
 
 tests/test_tokenizer.o: tests/test_tokenizer.cpp.o
 .PHONY : tests/test_tokenizer.o
@@ -339,13 +403,20 @@ help:
 	@echo "... gtest"
 	@echo "... gtest_main"
 	@echo "... test_example"
+	@echo "... test_parser"
 	@echo "... test_tokenizer"
+	@echo "... src/parser.o"
+	@echo "... src/parser.i"
+	@echo "... src/parser.s"
 	@echo "... src/tokenizer.o"
 	@echo "... src/tokenizer.i"
 	@echo "... src/tokenizer.s"
 	@echo "... tests/test_example.o"
 	@echo "... tests/test_example.i"
 	@echo "... tests/test_example.s"
+	@echo "... tests/test_parser.o"
+	@echo "... tests/test_parser.i"
+	@echo "... tests/test_parser.s"
 	@echo "... tests/test_tokenizer.o"
 	@echo "... tests/test_tokenizer.i"
 	@echo "... tests/test_tokenizer.s"

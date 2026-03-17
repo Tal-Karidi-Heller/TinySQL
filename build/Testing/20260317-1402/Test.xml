@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="(empty)"
+	BuildStamp="20260317-1402-Experimental"
+	Name="(empty)"
+	Generator="ctest-4.2.3"
+	CompilerName=""
+	CompilerVersion=""
+	OSName="macOS"
+	Hostname="myserver.local"
+	OSRelease="15.6.1"
+	OSVersion="24G90"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="158"
+	ModelName="Intel(R) Core(TM) i9-9980HK CPU @ 2.40GHz"
+	ProcessorCacheSize="32768"
+	NumberOfLogicalCPU="16"
+	NumberOfPhysicalCPU="8"
+	TotalVirtualMemory="2048"
+	TotalPhysicalMemory="32768"
+	LogicalProcessorsPerPhysical="8"
+	ProcessorClockFrequency="2400"
+	>
+	<Testing>
+		<StartDateTime>Mar 17 16:02 IST</StartDateTime>
+		<StartTestTime>1773756126</StartTestTime>
+		<TestList/>
+		<EndDateTime>Mar 17 16:02 IST</EndDateTime>
+		<EndTestTime>1773756126</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>

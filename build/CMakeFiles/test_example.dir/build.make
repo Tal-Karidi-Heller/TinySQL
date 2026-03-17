@@ -76,15 +76,15 @@ CMakeFiles/test_example.dir/tests/test_example.cpp.o: CMakeFiles/test_example.di
 CMakeFiles/test_example.dir/tests/test_example.cpp.o: /Users/tal/Desktop/TinySql/tests/test_example.cpp
 CMakeFiles/test_example.dir/tests/test_example.cpp.o: CMakeFiles/test_example.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/tal/Desktop/TinySql/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/test_example.dir/tests/test_example.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_example.dir/tests/test_example.cpp.o -MF CMakeFiles/test_example.dir/tests/test_example.cpp.o.d -o CMakeFiles/test_example.dir/tests/test_example.cpp.o -c /Users/tal/Desktop/TinySql/tests/test_example.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/test_example.dir/tests/test_example.cpp.o -MF CMakeFiles/test_example.dir/tests/test_example.cpp.o.d -o CMakeFiles/test_example.dir/tests/test_example.cpp.o -c /Users/tal/Desktop/TinySql/tests/test_example.cpp
 
 CMakeFiles/test_example.dir/tests/test_example.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/test_example.dir/tests/test_example.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/tests/test_example.cpp > CMakeFiles/test_example.dir/tests/test_example.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/tal/Desktop/TinySql/tests/test_example.cpp > CMakeFiles/test_example.dir/tests/test_example.cpp.i
 
 CMakeFiles/test_example.dir/tests/test_example.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/test_example.dir/tests/test_example.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/tests/test_example.cpp -o CMakeFiles/test_example.dir/tests/test_example.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/tal/Desktop/TinySql/tests/test_example.cpp -o CMakeFiles/test_example.dir/tests/test_example.cpp.s
 
 # Object files for target test_example
 test_example_OBJECTS = \
