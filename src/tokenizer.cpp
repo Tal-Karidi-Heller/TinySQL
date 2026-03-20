@@ -20,7 +20,11 @@ const std::string keyword_arguments[] = {
 const std::string operators[] = {
     "="};
 
-bool is_keyword(std::string element)
+const char symbols[] = {
+    ',', '(', ')'};
+
+bool
+is_keyword(std::string element)
 {
     for (const std::string &keyword : keyword_arguments)
     {
@@ -45,6 +49,15 @@ bool is_operator(std::string &element)
     return false;
 }
 
+bool is_symbol(char& c) {
+    for (const char& symbol : symbols) {
+        if (c == symbol) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool indicating_identifier(std::string lastValue)
 {
     if (lastValue == "FROM" || lastValue == "INTO" || lastValue == "TABLE")
@@ -53,6 +66,29 @@ bool indicating_identifier(std::string lastValue)
     }
 
     return false;
+}
+
+Token::Type classify_token(std::string string, std::vector<Token> classified_tokens)
+{
+    Token::Type type = Token::Type::UNDEFINED;
+    if (is_keyword(string))
+    {
+        type = Token::Type::KEYWORD;
+    }
+    else if (classified_tokens.size() > 1 && indicating_identifier(classified_tokens[classified_tokens.size() - 1].value) == true)
+    {
+        type = Token::Type::IDENTIFIER;
+    }
+    else if (is_operator(string))
+    {
+        type = Token::Type::OPERATOR;
+    }
+    else
+    {
+        type = Token::Type::LITERAL;
+    }
+
+    return type;
 }
 
 std::vector<Token> tokenize_query(std::string &query)
@@ -69,7 +105,7 @@ std::vector<Token> tokenize_query(std::string &query)
     {
 
         // std::cout << "c = '" << c << '\'' << '\n';
-        if (c != ',' && c != ' ' && c != '(' && c != ')')
+        if (c != ' ' && is_symbol(c) == false)
         {
             // std::cout << "c is not symbol" << '\n';
             currentToken.value += c;
@@ -81,34 +117,19 @@ std::vector<Token> tokenize_query(std::string &query)
             // Segmenting the current token.
             if (!currentToken.value.empty())
             {
-                if (is_keyword(currentToken.value))
-                {
-                    currentToken.type = Token::Type::KEYWORD;
-                }
-                else if (output.size() > 1 && indicating_identifier(output[output.size() - 1].value) == true)
-                {
-                    currentToken.type = Token::Type::IDENTIFIER;
-                }
-                else if(is_operator(currentToken.value)) {
-                    currentToken.type = Token::Type::OPERATOR;
-                }
-                else
-                {
-                    currentToken.type = Token::Type::LITERAL;
-                }
-
+                currentToken.type = classify_token(currentToken.value, output);
                 output.push_back(currentToken);
             }
 
-            currentToken.value = c;
-            currentToken.type = Token::Type::SYMBOL;
-
-            // std::cout << "added '" << currentToken.value << "'\n";
-
-            output.push_back(currentToken);
+            if (c != ' ')
+            {
+                currentToken.value = c;
+                currentToken.type = Token::Type::SYMBOL;
+                output.push_back(currentToken);
+            }
 
             currentToken.value = "";
-            currentToken.type = Token::Type::SYMBOL;
+            currentToken.type = Token::Type::UNDEFINED;
         }
     }
 
@@ -116,19 +137,7 @@ std::vector<Token> tokenize_query(std::string &query)
 
     if (!currentToken.value.empty())
     {
-        if (is_keyword(currentToken.value))
-        {
-            currentToken.type = Token::Type::KEYWORD;
-        }
-        else if (output.size() > 1 && indicating_identifier(output[output.size() - 1].value) == true)
-        {
-            currentToken.type = Token::Type::IDENTIFIER;
-        }
-        else
-        {
-            currentToken.type = Token::Type::LITERAL;
-        }
-        std::cout << "pushing " << currentToken.value;
+        currentToken.type = classify_token(currentToken.value, output);
         output.push_back(currentToken);
     }
 

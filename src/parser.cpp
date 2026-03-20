@@ -2,6 +2,16 @@
 #include "parser.h"
 #include "tokenizer.h"
 
+std::ostream &operator<<(std::ostream &os, const Value &value) {
+    if (std::holds_alternative<std::string>(value)) {
+        std::cout << (std::get<std::string>(value));
+    }
+    else {
+        std::cout << std::get<int>(value);
+    }
+    return os;
+}
+
 std::ostream &operator<<(std::ostream &os, const std::vector<std::string> &vector)
 {
     for (int i = 0; i < vector.size(); i++)
@@ -51,9 +61,9 @@ bool Parser::skipSymbols(std::vector<Token>::iterator &it, const std::vector<Tok
     return it == end;
 }
 
-std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::iterator &start, std::vector<Token>::iterator &end, std::vector<SingleCondition>& output)
+std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::iterator &start, std::vector<Token>::iterator &end, std::vector<SingleCondition> &output)
 {
-    if (skipSymbols(start, end) == true)
+    if (start == end)
     {
         throw std::invalid_argument("WHERE Must have Column");
     }
@@ -67,7 +77,7 @@ std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::i
 
         std::cout << "WHERE condition is AND" << std::endl;
 
-        if (skipSymbols(start, end) == true)
+        if (start == end)
         {
             throw std::invalid_argument("WHERE Must have Column");
         }
@@ -79,7 +89,7 @@ std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::i
 
         std::cout << "WHERE condition is OR" << std::endl;
 
-        if (skipSymbols(start, end) == true)
+        if (start == end)
         {
             throw std::invalid_argument("WHERE Must have Column");
         }
@@ -90,14 +100,14 @@ std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::i
 
     std::cout << "WHERE column is " << current_condition.where_column << std::endl;
 
-    if (skipSymbols(start, end) == true && (*start).value != "=")
+    if (start == end || (*start).value != "=")
     {
         throw std::invalid_argument("WHERE Must have =");
     }
 
     start++;
 
-    if (skipSymbols(start, end) == true)
+    if (start == end)
     {
         throw std::invalid_argument("WHERE Must have value.");
     }
@@ -112,7 +122,7 @@ std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::i
 
     start++;
 
-    if (skipSymbols(start, end) == false)
+    if (start != end)
     {
         std::cout << "Calling function again" << std::endl;
         std::cout << "Current Token is " << (*start).value << "." << std::endl;
@@ -134,6 +144,9 @@ std::vector<SingleCondition> Parser::get_where_conditions(std::vector<Token>::it
 
 Command Parser::get_commands()
 {
+    if (tokenized_query.size() < 1) {
+        throw std::invalid_argument("Query must contain tokens.");
+    }
     if (tokenized_query[0].value == "SELECT")
     {
         // SELECT COMMAND
@@ -143,10 +156,6 @@ Command Parser::get_commands()
         for (; it != tokenized_query.end() && (*it).value != "FROM"; it++)
         {
             Token &it_token = *it;
-            if (it_token.type == Token::Type::SYMBOL)
-            {
-                continue;
-            }
 
             if (it_token.type == Token::Type::KEYWORD && it_token.value == "*")
             {
@@ -156,6 +165,14 @@ Command Parser::get_commands()
             else if (it_token.type == Token::Type::LITERAL)
             {
                 command.columns.push_back(it_token.value);
+                if ((*(it + 1)).value == ",")
+                {
+                    it++;
+                }
+                else if ((*(it + 1)).value != "FROM")
+                {
+                    throw std::invalid_argument("SELECT query must contain , between each column");
+                }
             }
         }
 
@@ -166,7 +183,7 @@ Command Parser::get_commands()
 
         it++;
 
-        if (skipSymbols(it, end) == true)
+        if (it == end)
         {
             throw std::invalid_argument("SELECT query must include table name after FROM");
         }
@@ -175,7 +192,7 @@ Command Parser::get_commands()
 
         it++;
 
-        if (skipSymbols(it, end) == true)
+        if (it == end)
         {
             std::cout << "Query does not have a where condition\n";
             return command;
@@ -204,6 +221,122 @@ Command Parser::get_commands()
         {
             throw std::invalid_argument("At the end of a SELECT query a WHERE must come.");
         }
+    }
+
+    else if (tokenized_query[0].value == "INSERT")
+    {
+        std::cout << "INSERT parsing" << std::endl;
+        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
+        std::vector<Token>::iterator end = tokenized_query.end();
+
+        InsertCommand command;
+
+        if (it == end || (*it).value != "INTO")
+        {
+            throw std::invalid_argument("Into must come after INSERT.");
+        }
+
+        it++;
+
+        if (it == end)
+        {
+            throw std::invalid_argument("Name must come after INTO.");
+        }
+
+        command.destination = (*it).value;
+        std::cout << "destination " << command.destination << std::endl;
+
+        it++;
+
+        if (it == end || (*it).value != "VALUES")
+        {
+            throw std::invalid_argument("VALUES Must come after table name");
+        }
+
+        it++;
+
+        if (it == end || (*it).value != "(")
+        {
+            throw std::invalid_argument("( Must come after VALUES");
+        }
+        it++;
+
+        std::cout << (*it).value << std::endl;
+        for (; it != end && (*it).value != ")"; it++)
+        {
+            Token c_token = (*it);
+            std::cout << "c_token = " << c_token.value << std::endl;
+            if (c_token.type == Token::Type::LITERAL)
+            {
+                std::cout << "Pushing " << c_token.value << std::endl;
+                command.values.push_back(c_token.value);
+            }
+
+            if ((*(it + 1)).value == ",")
+            {
+                it++;
+            }
+            else if ((*(it + 1)).value != ")")
+            {
+                throw std::invalid_argument("SELECT query must contain , between each column");
+            }
+        }
+
+        std::cout << "Finished" << std::endl;
+
+        std::cout << command.values << std::endl;
+
+        return command;
+    }
+    else if (tokenized_query[0].value == "DELETE") {
+        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
+        std::vector<Token>::iterator end = tokenized_query.end();
+        DeleteFromCommand command;
+
+        if ((*it).value != "FROM") {
+            throw std::invalid_argument("FROM Must after come after DELETE");
+        }
+
+        it++;
+
+        if (it == end) {
+            throw std::invalid_argument("Name must come after from FROM in DELETE SQL.");
+        }
+
+        command.table = (*it).value;
+        it++;
+
+        if (it == end || (*it).value != "WHERE") {
+            throw std::invalid_argument("WHERE Must come after table name in DELETE FROM");
+        }
+
+        it++;
+
+        command.where_condition = get_where_conditions(it, end);
+
+        std::cout << command.where_condition << std::endl;
+
+        return command;
+    }
+    else if (tokenized_query[0].value == "DROP") {
+        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
+        std::vector<Token>::iterator end = tokenized_query.end();
+        DropTableCommand command;
+        if (it->value != "TABLE") {
+            throw std::invalid_argument("TABLE keyword must come after DROP");
+        }
+        
+        it++;
+
+        if (it == end) {
+            throw std::invalid_argument("Table name must come after TABLE keyword.");
+        }
+
+        command.table = it->value;
+
+        std::cout << command.table << std::endl;
+
+        return command;
     }
     else
     {

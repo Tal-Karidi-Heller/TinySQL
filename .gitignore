@@ -1,5 +1,5 @@
 # Ignore CI build directory
-build/
+build/*
 xcuserdata
 cmake-build-debug/
 .idea/
@@ -13,6 +13,7 @@ bazel-testlogs
 
 # Visual Studio files
 .vs
+.vscode/*
 *.sdf
 *.opensdf
 *.VC.opendb

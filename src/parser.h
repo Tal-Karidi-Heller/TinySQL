@@ -37,7 +37,7 @@ struct SelectCommand {
     bool has_where_condition = false;
     std::vector<SingleCondition> where_conditions;
 
-    SelectCommand() : columns(0) {}
+    SelectCommand() : columns(0), where_conditions(0) {}
 };
 
 
@@ -47,7 +47,9 @@ struct CreateTableCommand {
 
 struct InsertCommand {
     std::string destination;
-    std::vector<Value> values;
+    std::vector<std::string> values;
+
+    InsertCommand() : values(0) {}
 };
 
 struct DropTableCommand {
@@ -56,7 +58,9 @@ struct DropTableCommand {
 
 struct DeleteFromCommand {
     std::string table;
-    std::string where_condition;
+    std::vector<SingleCondition> where_condition;
+
+    DeleteFromCommand() : where_condition(0) {}
 };
 
 using Command = std::variant<SelectCommand, CreateTableCommand, InsertCommand, DropTableCommand, DeleteFromCommand>;
