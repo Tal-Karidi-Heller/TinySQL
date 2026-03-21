@@ -1,3 +1,0 @@
-/Users/tal/Desktop/TinySql/CMakeFiles/my_tests.dir
-/Users/tal/Desktop/TinySql/CMakeFiles/edit_cache.dir
-/Users/tal/Desktop/TinySql/CMakeFiles/rebuild_cache.dir

@@ -1,7 +1,0 @@
-HelloTest.BasicAssertions 24 0.000557986
-TokenizerTests.SelectTest 19 0.000710215
-ParserTests.SelectTest 7 0
-ParserTests.SimpleSelectTest 5 0.00285588
-ParserTests.WhereSelectTest 3 0.00468947
-ParserTests.SelectAllTest 1 0.013931
----

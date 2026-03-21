@@ -1,5 +1,0 @@
-if(EXISTS "/Users/tal/Desktop/TinySql/build/test_tokenizer[1]_tests.cmake")
-  include("/Users/tal/Desktop/TinySql/build/test_tokenizer[1]_tests.cmake")
-else()
-  add_test(test_tokenizer_NOT_BUILT test_tokenizer_NOT_BUILT)
-endif()
