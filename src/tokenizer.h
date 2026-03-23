@@ -4,7 +4,7 @@
 #include <vector>
 
 struct Token {
-    enum Type {KEYWORD, IDENTIFIER, LITERAL, SYMBOL, UNDEFINED, OPERATOR};
+    enum Type {KEYWORD, IDENTIFIER, STRING_LITERAL, NUMERIC_LITERAL, SYMBOL, UNDEFINED, OPERATOR};
     Type type;
     std::string value;
 };

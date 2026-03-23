@@ -4,23 +4,13 @@
 #include <vector>
 #include <variant>
 #include "tokenizer.h"
+#include "table.h"
 
 using Value = std::variant<int, std::string>;
 
-// struct Column {
-//     std::string name;
-//     enum Type {INTEGER, TEXT } type;
-// };
-
-// struct Table {
-//     std::string name;
-//     const Column[] columns;
-//     std::vector<Value[]> rows; 
-// };
-
 struct SingleCondition {
     std::string where_column;
-    std::string where_value;
+    Value where_value;
     
     enum Operator {AND, OR, NONE};
     Operator op;
@@ -43,13 +33,16 @@ struct SelectCommand {
 
 struct CreateTableCommand {
     std::string name;
+    std::vector<Column> columns;
 };
 
 struct InsertCommand {
     std::string destination;
-    std::vector<std::string> values;
+    std::vector<Value> values;
 
-    InsertCommand() : values(0) {}
+    InsertCommand() {
+        this->values = std::vector<Value>(0);
+    }
 };
 
 struct DropTableCommand {
@@ -66,6 +59,8 @@ struct DeleteFromCommand {
 using Command = std::variant<SelectCommand, CreateTableCommand, InsertCommand, DropTableCommand, DeleteFromCommand>;
 
 class Parser {
+private:
+    static Column get_column(std::vector<Token>::iterator& it, std::vector<Token>::iterator end);
 public:
     std::vector<Token> tokenized_query;
     Parser(std::vector<Token>& tokenized_query);

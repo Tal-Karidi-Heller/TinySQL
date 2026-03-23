@@ -3,12 +3,12 @@
 #include "../src/tokenizer.h"
 #include <vector>
 
-TEST(ParserTests, SimpleSelectTest) { 
+TEST(ParserTests, SimpleSelectTest) {
     std::string query = "SELECT a, b, c FROM table1";
     std::vector<Token> tokens = tokenize_query(query);
     Parser parser(tokens);
     Command command = parser.get_commands();
-    
+
     EXPECT_TRUE(
         std::holds_alternative<SelectCommand>(command)
     );
@@ -35,12 +35,12 @@ TEST(ParserTests, SimpleSelectTest) {
     }
 }
 
-TEST(ParserTests, SelectAllTest) { 
+TEST(ParserTests, SelectAllTest) {
     std::string query = "SELECT * FROM table1";
     std::vector<Token> tokens = tokenize_query(query);
     Parser parser(tokens);
     Command command = parser.get_commands();
-    
+
     EXPECT_TRUE(
         std::holds_alternative<SelectCommand>(command)
     );
@@ -63,12 +63,12 @@ TEST(ParserTests, SelectAllTest) {
     );
 }
 
-TEST(ParserTests, WhereSelectTest) { 
+TEST(ParserTests, WhereSelectTest) {
     std::string query = "SELECT a, b, c FROM table1 WHERE a = 2";
     std::vector<Token> tokens = tokenize_query(query);
     Parser parser(tokens);
     Command command = parser.get_commands();
-    
+
     EXPECT_TRUE(
         std::holds_alternative<SelectCommand>(command)
     );
@@ -100,12 +100,16 @@ TEST(ParserTests, WhereSelectTest) {
     );
 
     EXPECT_EQ(
-        select_command.where_column,
+        select_command.where_conditions[0].where_column,
         "a"
     );
 
+    EXPECT_TRUE(
+        std::holds_alternative<int>(select_command.where_conditions[0].where_value)
+    );
+
     EXPECT_EQ(
-        select_command.where_value,
-        "2"
+        std::get<int>(select_command.where_conditions[0].where_value),
+        2
     );
 }
