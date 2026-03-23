@@ -7,45 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
 
 FetchContent_MakeAvailable(googletest)
 
+add_subdirectory(src)
+
 enable_testing()
-
-add_executable(
-  test_example
-  tests/test_example.cpp
-)
-target_link_libraries(
-  test_example
-  GTest::gtest_main
-)
-
-add_executable(
-  test_tokenizer
-  tests/test_tokenizer.cpp
-  src/tokenizer.cpp
-)
-target_link_libraries(
-  test_tokenizer
-  GTest::gtest_main
-)
-
-add_executable(
-  test_parser
-  tests/test_parser.cpp
-  src/tokenizer.cpp
-  src/parser.cpp
-)
-target_link_libraries(
-  test_parser
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(test_example)
-gtest_discover_tests(test_tokenizer)
-gtest_discover_tests(test_parser)
+add_subdirectory(tests)
