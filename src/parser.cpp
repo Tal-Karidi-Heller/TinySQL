@@ -1,6 +1,9 @@
 #include <iostream>
 #include "parser.h"
 #include "tokenizer.h"
+#include "utils.h"
+
+template class VectorIterator<Token>;
 
 std::ostream &operator<<(std::ostream &os, const Value &value) {
     if (std::holds_alternative<std::string>(value)) {
@@ -33,26 +36,7 @@ std::ostream &operator<<(std::ostream &os, const std::vector<Column> &vector) {
     return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const SingleCondition &condition) {
-    os << "(column = '" << condition.where_column << "', value = '" << condition.where_value << "')" << std::endl;
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const std::vector<SingleCondition> &conditions) {
-    for (SingleCondition c: conditions) {
-        os << c << ", ";
-    }
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const SelectCommand &command) {
-    os << "columns = " << command.columns << "(" << command.columns.size() << ")" << ", all = " << command.all <<
-            ", table_name = " << command.table_name << ", has_where_condition = "
-            << command.has_where_condition << ", where_conditions = " << command.where_conditions;
-    return os;
-}
-
-std::optional<int> convert_to_number(std::string &string) {
+std::optional<int> convert_to_number(const std::string &string) {
     try {
         int num = std::stoi(string);
         return num;
@@ -63,96 +47,141 @@ std::optional<int> convert_to_number(std::string &string) {
     }
 }
 
+
 Parser::Parser(std::vector<Token> &tokenized_query) {
     this->tokenized_query = tokenized_query;
 }
 
-bool Parser::skipSymbols(std::vector<Token>::iterator &it, const std::vector<Token>::iterator &end) {
-    for (; it != end && (*it).type == Token::Type::SYMBOL; it++) {
-    }
-    return it == end;
+SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
+    if (!token_iterator.not_empty())
+        throw std::invalid_argument("No column");
+
+    std::string column = token_iterator.next().value;
+
+    std::cout << "column = " << column << std::endl;
+
+    if (!token_iterator.not_empty())
+        throw std::invalid_argument("No =");
+
+    std::string equal_op = token_iterator.next().value;
+
+    if (!token_iterator.not_empty())
+        throw std::invalid_argument("No value");
+
+    Value value = token_iterator.next().value;
+
+    return SimpleCondition(column, SimpleCondition::EQUALS, value);
 }
 
+LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
+    std::stack<std::variant<Parentheses, LogicalCondition, LogicalOperator>> output;
 
-std::vector<SingleCondition> Parser::_get_where_conditions(std::vector<Token>::iterator &start,
-                                                           std::vector<Token>::iterator &end,
-                                                           std::vector<SingleCondition> &output) {
-    if (start == end) {
-        throw std::invalid_argument("WHERE Must have Column");
-    }
+    SimpleCondition c1 = read_condition(token_iterator);
+    LogicalCondition current_condition = LogicalCondition(
+        LogicalOperator::AND,
+        c1
+    );
 
-    SingleCondition current_condition;
+    int np = 0;
 
-    if (start->value == "AND") {
-        current_condition.op = SingleCondition::Operator::AND;
-        ++start;
+    Token logical_op = token_iterator.next();
 
-        std::cout << "WHERE condition is AND" << std::endl;
-
-        if (start == end) {
-            throw std::invalid_argument("WHERE Must have Column");
+    while (token_iterator.not_empty()) {
+        if (logical_op.value == "OR" && current_condition.conditions.size() > 0) {
+            output.push(current_condition);
         }
-    } else if (start->value == "OR") {
-        current_condition.op = SingleCondition::Operator::OR;
-        ++start;
 
-        std::cout << "WHERE condition is OR" << std::endl;
+        if (token_iterator.peek().value == "(") {
+            np++;
 
-        if (start == end) {
-            throw std::invalid_argument("WHERE Must have Column");
+            output.push(current_condition);
+            if (logical_op.value == "AND")
+                output.push(LogicalOperator::AND);
+
+            output.push(Parentheses::OPEN);
+
+            token_iterator.next();
+
+            c1 = read_condition(token_iterator);
+            current_condition = LogicalCondition(
+                LogicalOperator::AND,
+                c1
+            );
+        } else {
+            c1 = read_condition(token_iterator);
+            if (logical_op.value == "AND") {
+                current_condition.conditions.push_back(c1);
+            } else {
+                current_condition = LogicalCondition(
+                    LogicalOperator::AND,
+                    c1
+                );
+            }
         }
+
+        if (token_iterator.peek().value == ")") {
+            std::cout << ") exists" << std::endl;
+            if (np < 1)
+                throw std::invalid_argument(") without (");
+            np--;
+            output.push(current_condition);
+            std::cout << "( push: " << current_condition;
+
+            LogicalCondition c = LogicalCondition(
+                LogicalOperator::OR
+            );
+            std::cout << "output size: " << output.size() << std::endl;
+            while (!std::holds_alternative<Parentheses>(output.top())) {
+                c.conditions.push_back(std::get<LogicalCondition>(output.top()));
+                output.pop();
+            }
+            output.pop();
+
+            if (std::holds_alternative<LogicalOperator>(output.top())) {
+                std::cout << "Have AND" << std::endl;
+                LogicalCondition c_tag = LogicalCondition(
+                    std::get<LogicalOperator>(output.top())
+                );
+                output.pop();
+
+                c_tag.conditions.push_back(std::get<LogicalCondition>(output.top()));
+                output.pop();
+                c_tag.conditions.push_back(c);
+
+                output.push(c_tag);
+            }
+            else
+                output.push(c);
+
+            token_iterator.next();
+            current_condition = LogicalCondition(
+                LogicalOperator::AND
+            );
+        }
+
+        if (token_iterator.not_empty())
+            logical_op = token_iterator.next();
     }
 
-    current_condition.where_column = start->value;
-    ++start;
+    if (current_condition.conditions.size() > 0)
+        output.push(current_condition);
 
-    std::cout << "WHERE column is " << current_condition.where_column << std::endl;
+    LogicalCondition final_output = LogicalCondition(LogicalOperator::OR);
+    std::cout << "np = " << np << std::endl;
+    std::cout << "size = " << output.size() << std::endl;
+    while (!output.empty()) {
+        if (std::holds_alternative<Parentheses>(output.top()))
+            throw std::invalid_argument("Still ) in output");
 
-    if (start == end || start->value != "=") {
-        throw std::invalid_argument("WHERE Must have =");
+        final_output.conditions.push_back(std::get<LogicalCondition>(output.top()));
+        output.pop();
     }
 
-    ++start;
+    std::cout << "Finished 123123" << std::endl;
 
-    if (start == end) {
-        throw std::invalid_argument("WHERE Must have value.");
-    }
-
-    if (start->type != Token::STRING_LITERAL && start->type != Token::NUMERIC_LITERAL)
-        throw std::invalid_argument("Condition value must be literal -> Number or string literal");
-
-    if (start->type == Token::STRING_LITERAL)
-        current_condition.where_value = start->value;
-    else
-        current_condition.where_value = std::stoi(start->value);
-
-    std::cout << "WHERE value is " << current_condition.where_value << std::endl;
-    std::cout << "WHERE VALUE IS NUMBER " << std::holds_alternative<int>(current_condition.where_value) << std::endl;
-
-    output.push_back(current_condition);
-
-    std::cout << "Add condition to output " << current_condition.where_value << std::endl;
-
-    ++start;
-
-    if (start != end) {
-        std::cout << "Calling function again" << std::endl;
-        std::cout << "Current Token is " << (*start).value << "." << std::endl;
-        _get_where_conditions(
-            start,
-            end,
-            output);
-    }
-
-    return output;
+    return final_output;
 }
 
-std::vector<SingleCondition> Parser::get_where_conditions(std::vector<Token>::iterator start,
-                                                          std::vector<Token>::iterator end) {
-    std::vector<SingleCondition> output;
-    return _get_where_conditions(
-        start, end, output);
-}
 
 Column Parser::get_column(std::vector<Token>::iterator &it, std::vector<Token>::iterator end) {
     Column column;
@@ -180,150 +209,9 @@ Command Parser::get_commands() {
     if (tokenized_query.size() < 1) {
         throw std::invalid_argument("Query must contain tokens.");
     }
-    if (tokenized_query[0].value == "SELECT") {
-        // SELECT COMMAND
-        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
-        std::vector<Token>::iterator end = tokenized_query.end();
-        SelectCommand command;
-        for (; it != tokenized_query.end() && (*it).value != "FROM"; it++) {
-            Token &it_token = *it;
 
-            if (it_token.type == Token::Type::KEYWORD && it_token.value == "*") {
-                command.all = true;
-            } else if (it_token.type == Token::Type::IDENTIFIER) {
-                command.columns.push_back(it_token.value);
-                if ((*(it + 1)).value == ",") {
-                    it++;
-                } else if ((*(it + 1)).value != "FROM") {
-                    throw std::invalid_argument("SELECT query must contain , between each column");
-                }
-            }
-        }
-
-        if (it == end) {
-            throw std::invalid_argument("SELECT query must contain FROM");
-        }
-
-        it++;
-
-        if (it == end) {
-            throw std::invalid_argument("SELECT query must include table name after FROM");
-        }
-
-        command.table_name = (*it).value;
-
-        it++;
-
-        if (it == end) {
-            std::cout << "Query does not have a where condition\n";
-            return command;
-        }
-
-        std::cout << command.columns << "\n";
-
-        // return command;
-
-        if ((*it).value == "WHERE") {
-            command.has_where_condition = true;
-            it++;
-
-            std::vector<SingleCondition> conditions = get_where_conditions(
-                it, end);
-
-            command.where_conditions = conditions;
-
-            std::cout << command.where_conditions.size() << std::endl;
-            std::cout << command << std::endl;
-
-            return command;
-        } else {
-            throw std::invalid_argument("At the end of a SELECT query a WHERE must come.");
-        }
-    } else if (tokenized_query[0].value == "INSERT") {
-        std::cout << "INSERT parsing" << std::endl;
-        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
-        std::vector<Token>::iterator end = tokenized_query.end();
-
-        InsertCommand command;
-
-        if (it == end || (*it).value != "INTO") {
-            throw std::invalid_argument("Into must come after INSERT.");
-        }
-
-        it++;
-
-        if (it == end) {
-            throw std::invalid_argument("Name must come after INTO.");
-        }
-
-        command.destination = it->value;
-        std::cout << "destination " << command.destination << std::endl;
-
-        it++;
-
-        if (it == end || it->value != "VALUES") {
-            throw std::invalid_argument("VALUES Must come after table name");
-        }
-
-        it++;
-
-        if (it == end || it->value != "(") {
-            throw std::invalid_argument("( Must come after VALUES");
-        }
-        it++;
-
-        std::cout << it->value << std::endl;
-        for (; it != end && it->value != ")"; it++) {
-            Token c_token = *it;
-            std::cout << "c_token = " << c_token.value << std::endl;
-            if (c_token.type == Token::STRING_LITERAL)
-                command.values.push_back(c_token.value);
-            else if (c_token.type == Token::NUMERIC_LITERAL)
-                command.values.push_back(std::stoi(c_token.value));
-            else
-                throw std::invalid_argument("Values must be LITERALS");
-
-            if ((it + 1)->value == ",") {
-                ++it;
-            } else if ((it + 1)->value != ")") {
-                throw std::invalid_argument("SELECT query must contain , between each column");
-            }
-        }
-
-        std::cout << "Finished" << std::endl;
-
-        // std::cout << command.values << std::endl;
-
-        return command;
-    } else if (tokenized_query[0].value == "DELETE") {
-        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
-        std::vector<Token>::iterator end = tokenized_query.end();
-        DeleteFromCommand command;
-
-        if ((*it).value != "FROM") {
-            throw std::invalid_argument("FROM Must after come after DELETE");
-        }
-
-        it++;
-
-        if (it == end) {
-            throw std::invalid_argument("Name must come after from FROM in DELETE SQL.");
-        }
-
-        command.table = it->value;
-        it++;
-
-        if (it == end || it->value != "WHERE") {
-            throw std::invalid_argument("WHERE Must come after table name in DELETE FROM");
-        }
-
-        it++;
-
-        command.where_condition = get_where_conditions(it, end);
-
-        std::cout << command.where_condition << std::endl;
-
-        return command;
+    VectorIterator<Token> it = VectorIterator<Token>(tokenized_query.begin(), tokenized_query.end());
+    if (it.peek().value == "SELECT") {
     } else if (tokenized_query[0].value == "DROP") {
         std::vector<Token>::iterator it = tokenized_query.begin() + 1;
         std::vector<Token>::iterator end = tokenized_query.end();
@@ -382,3 +270,4 @@ Command Parser::get_commands() {
         throw std::invalid_argument("Not an available command.");
     }
 }
+

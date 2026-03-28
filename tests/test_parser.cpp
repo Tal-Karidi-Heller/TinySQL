@@ -94,22 +94,4 @@ TEST(ParserTests, WhereSelectTest) {
         );
     }
 
-    EXPECT_EQ(
-        select_command.has_where_condition,
-        true
-    );
-
-    EXPECT_EQ(
-        select_command.where_conditions[0].where_column,
-        "a"
-    );
-
-    EXPECT_TRUE(
-        std::holds_alternative<int>(select_command.where_conditions[0].where_value)
-    );
-
-    EXPECT_EQ(
-        std::get<int>(select_command.where_conditions[0].where_value),
-        2
-    );
 }

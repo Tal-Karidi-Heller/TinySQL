@@ -7,7 +7,7 @@ add_library(
         app_logic
         parser.cpp
         tokenizer.cpp
-        engine.cpp
+        utils.cpp
 )
 
 add_executable(

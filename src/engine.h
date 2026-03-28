@@ -36,6 +36,8 @@ private:
 public:
     Engine();
     bool table_exists(const std::string& name);
+
+    static void preetty_print_table(std::vector<std::string> &columns, std::vector<std::vector<Value>> &rows);
     Status save_to_disk();
     Status load_from_disk();
     Status execute_command(const Command& command);
