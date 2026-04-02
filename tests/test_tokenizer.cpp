@@ -1,63 +1,52 @@
 #include <gtest/gtest.h>
+#include "../src/parser.h"
 #include "../src/tokenizer.h"
 #include <vector>
+
+#define EXPECT_TOKEN(a, b) \
+    EXPECT_EQ(a.value, b.value); \
+    EXPECT_EQ(a.type, b.type);
+
 
 TEST(TokenizerTests, SelectTest) {
     std::string query = "SELECT a, b, c FROM table1";
     std::vector<Token> vector = tokenize_query(
         query
     );
+    std::cout << "VECTOR SIZE = " << vector.size() << std::endl;
 
-    EXPECT_EQ(vector[0].value, "SELECT");
-    EXPECT_EQ(vector[0].type, Token::Type::KEYWORD);
+    EXPECT_TOKEN(vector[0], Token("SELECT", Token::KEYWORD));
 
-    EXPECT_EQ(vector[1].value, " ");
-    EXPECT_EQ(vector[1].type, Token::Type::SYMBOL);
+    EXPECT_TOKEN(vector[1], Token("a", Token::IDENTIFIER));
+    EXPECT_TOKEN(vector[2], Token(",", Token::SYMBOL));
 
-    std::cout << "vecotor[1] = '" << vector[1].value << '\'';
+    EXPECT_TOKEN(vector[3], Token("b", Token::IDENTIFIER));
+    EXPECT_TOKEN(vector[4], Token(",", Token::SYMBOL));
 
-    std::array<std::string, 3> select_columns = {"a", "b", "c"};
-    int position = 2;
-    int index = 0;
+    EXPECT_TOKEN(vector[5], Token("c", Token::IDENTIFIER));
 
-    for (std::string column : select_columns) {
-        EXPECT_EQ(
-            vector[position].value,
-            column
-        );
-        
-        EXPECT_EQ(
-            vector[position].type,
-            Token::Type::LITERAL
-        );
+    EXPECT_TOKEN(vector[6], Token("FROM", Token::Type::KEYWORD));
 
-        if (index < select_columns.size() - 1) {
-            position += 1;
+    EXPECT_TOKEN(vector[7], Token("table1", Token::Type::IDENTIFIER));
+}
 
-            EXPECT_EQ(
-                vector[position].value,
-                ","
-            );
-            
-            EXPECT_EQ(
-                vector[position].type,
-                Token::Type::SYMBOL
-            );
-        }
+TEST(TokenizerTests, LowerCase_Select) {
+    std::string query = "select a, b, c from table1";
+    std::vector<Token> vector = tokenize_query(
+        query
+    );
 
-        position += 1;
+    EXPECT_TOKEN(vector[0], Token("SELECT", Token::KEYWORD));
 
-        EXPECT_EQ(
-            vector[position].value,
-            " "
-        );
-        
-        EXPECT_EQ(
-            vector[position].type,
-            Token::Type::SYMBOL
-        );
+    EXPECT_TOKEN(vector[1], Token("a", Token::IDENTIFIER));
+    EXPECT_TOKEN(vector[2], Token(",", Token::SYMBOL));
 
-        position += 1;
-        index += 1;
-    }
+    EXPECT_TOKEN(vector[3], Token("b", Token::IDENTIFIER));
+    EXPECT_TOKEN(vector[4], Token(",", Token::SYMBOL));
+
+    EXPECT_TOKEN(vector[5], Token("c", Token::IDENTIFIER));
+
+    EXPECT_TOKEN(vector[6], Token("FROM", Token::KEYWORD));
+
+    EXPECT_TOKEN(vector[7], Token("table1", Token::IDENTIFIER));
 }
