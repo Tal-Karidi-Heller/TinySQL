@@ -3,46 +3,36 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <sys/time.h>
+
 #include "tokenizer.h"
 #include "table.h"
 #include "utils.h"
 
-using Value = std::variant<int, std::string>;
-
-std::ostream &operator<<(std::ostream &os, const Value &value);
-
-
-struct SelectCommand {
-    std::vector<std::string> columns;
-    bool all = false;
-    std::string table_name;
-    // std::optional<Expression> where_expression;
-};
-
-
 struct CreateTableCommand {
     std::string name;
     std::vector<Column> columns;
+
+    CreateTableCommand(const std::string &name, const std::vector<Column> &columns): name(name), columns(columns) {}
+
+    CreateTableCommand(): name(""), columns() {}
 };
 
 struct InsertCommand {
     std::string destination;
     std::vector<Value> values;
 
-    InsertCommand() {
-    }
+    InsertCommand() {}
+    InsertCommand(const std::string &destination, const std::vector<Value> &values): destination(destination), values(values) {}
 };
 
 struct DropTableCommand {
     std::string table;
+
+    DropTableCommand(const std::string &table): table(table) {}
+    DropTableCommand(): table("") {}
 };
 
-struct DeleteFromCommand {
-    std::string table;
-    // std::optional<Expression> where_expression;
-};
-
-using Command = std::variant<SelectCommand, CreateTableCommand, InsertCommand, DropTableCommand, DeleteFromCommand>;
 
 enum LogicalOperator { AND, OR };
 
@@ -56,6 +46,12 @@ struct SimpleCondition {
 
     SimpleCondition(const std::string &column, EqualOp equal_op, const Value &value) : column(column),
         equal_op(equal_op), value(value) {
+    }
+
+    SimpleCondition() : column(""), equal_op(EqualOp::EQUALS), value("") {}
+
+    inline bool operator==(SimpleCondition other) const {
+        return this->equal_op == other.equal_op && this->value == other.value && this->column == other.column;
     }
 };
 
@@ -74,12 +70,13 @@ inline std::ostream &operator<<(std::ostream &os, const SimpleCondition &s) {
 
 struct LogicalCondition {
     LogicalOperator op;
-    std::vector<std::variant<SimpleCondition, LogicalCondition> > conditions;
+    std::vector<std::variant<SimpleCondition, LogicalCondition>> conditions;
 
-    LogicalCondition(LogicalOperator op) : op(op) {
-    }
+    LogicalCondition(LogicalOperator op) : op(op), conditions(0) {}
 
-    LogicalCondition(LogicalOperator op, SimpleCondition condition) : op(op) {
+    LogicalCondition(const LogicalOperator &op, const std::vector<std::variant<SimpleCondition, LogicalCondition>> &conditions): op(op), conditions(conditions) {}
+
+    LogicalCondition(LogicalOperator op, SimpleCondition condition) : op(op), conditions() {
         conditions.push_back(condition);
     }
 };
@@ -110,17 +107,43 @@ inline std::ostream &operator<<(std::ostream &os, const LogicalCondition &l) {
 
 enum Parentheses { OPEN };
 
+struct SelectCommand {
+    std::vector<std::string> columns;
+    bool all = false;
+    std::string table_name;
+    std::optional<LogicalCondition> where;
+
+    SelectCommand() {}
+    SelectCommand(const std::vector<std::string> &columns, const bool all, const std::string &table_name) : columns(columns), all(all), table_name(table_name) {}
+};
+
+inline std::ostream& operator<<(std::ostream &os, const SelectCommand c) {
+    os << "[SelectCommand] {columns = " << c.columns << ", all = " << c.all << ", table_name = " << c.table_name << ", where = " << c.where << "}";
+    return os;
+}
+
+struct DeleteFromCommand {
+    std::string table;
+    LogicalCondition where;
+
+    DeleteFromCommand(std::string &table, LogicalCondition &where): table(table), where(where) {}
+};
+
+using Command = std::variant<SelectCommand, CreateTableCommand, InsertCommand, DropTableCommand, DeleteFromCommand>;
+
 
 class Parser {
 private:
-    static Column get_column(std::vector<Token>::iterator &it, std::vector<Token>::iterator end);
+    static Column get_column(VectorIterator<Token> &it);
 
 public:
     std::vector<Token> tokenized_query;
 
-    Parser(std::vector<Token> &tokenized_query);
+    Parser(const std::vector<Token> &tokenized_query);
 
-    Command get_commands();
+    explicit Parser(int _cpp_par_);
+
+    Command get_command();
 
     static LogicalCondition parse_where(VectorIterator<Token> &token_iterator);
 };

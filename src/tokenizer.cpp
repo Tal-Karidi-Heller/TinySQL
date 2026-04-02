@@ -11,6 +11,8 @@ const std::string keyword_arguments[] = {
     "DROP",
     "TABLE",
     "WHERE",
+    "INTEGER",
+    "TEXT",
     "*"
 };
 
@@ -22,9 +24,18 @@ const char symbols[] = {
     ',', '(', ')'
 };
 
+std::string str_toupper(std::string s)
+{
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c){ return std::toupper(c); }
+                  );
+    return s;
+}
+
 bool is_keyword(std::string element) {
+    std::string upper_ = str_toupper(element);
     for (const std::string &keyword: keyword_arguments)
-        if (keyword == element)
+        if (keyword == upper_)
             return true;
     return false;
 }
@@ -36,7 +47,7 @@ bool is_operator(std::string &element) {
     return false;
 }
 
-bool is_symbol(char &c) {
+bool is_symbol(const char &c) {
     for (const char &symbol: symbols)
         if (c == symbol)
             return true;
@@ -69,22 +80,18 @@ Token::Type classify_token(std::string string, std::vector<Token> classified_tok
     } else
         type = Token::Type::IDENTIFIER;
 
-    std::cout << string << " -> " << type << std::endl;
-
     return type;
 }
 
-std::vector<Token> tokenize_query(std::string &query) {
+std::vector<Token> tokenize_query(const std::string &query) {
     std::vector<Token> output;
 
     Token currentToken;
     currentToken.value = "";
     currentToken.type = Token::Type::UNDEFINED;
 
-    std::cout << "Starting\n";
 
-    for (char &c: query) {
-        // std::cout << "c = '" << c << '\'' << '\n';
+    for (const char &c: query) {
         if (c == '"' || c == '\'') {
             if (currentToken.value.size() == 0) {
                 // It means we are starting a new string.
@@ -119,41 +126,17 @@ std::vector<Token> tokenize_query(std::string &query) {
         }
     }
 
-    std::cout << currentToken.value << "\n";
-
     if (!currentToken.value.empty()) {
         currentToken.type = classify_token(currentToken.value, output);
         output.push_back(currentToken);
     }
 
-    return output;
-}
-
-std::ostream &operator<<(std::ostream &os, const Token::Type &type) {
-    switch (type) {
-        case Token::KEYWORD:
-            os << "KEYWORD";
-            break;
-        case Token::IDENTIFIER:
-            os << "IDENTIFIER";
-            break;
-        case Token::STRING_LITERAL:
-            os << "STRING_LITERAL";
-            break;
-        case Token::NUMERIC_LITERAL:
-            os << "NUMERIC_LITERAL";
-            break;
-        case Token::OPERATOR:
-            os << "OPERATOR";
-            break;
-        case Token::SYMBOL:
-            os << "SYMBOL";
-            break;
-        case Token::UNDEFINED:
-            os << "UNDEFINED";
-            break;
+    for (Token &t: output) {
+        if (t.type == Token::KEYWORD)
+           t.value = str_toupper(t.value);
     }
-    return os;
+
+    return output;
 }
 
 void print_vector(std::vector<Token> vector) {

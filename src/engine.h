@@ -8,6 +8,7 @@
 #include <string>
 #include <variant>
 #include <unordered_map>
+#include <fstream>
 #include "parser.h"
 #include "table.h"
 
@@ -18,16 +19,10 @@ struct Status {
     std::string description;
     std::optional<std::vector<std::vector<Value>>> output_rows;
 
-    Status(const bool& succeeded, const std::string& description, std::vector<std::vector<Value>>& output_rows) {
-        this->succeeded = succeeded;
-        this->description = description;
-        this->output_rows = output_rows;
-    }
+    Status(const bool &succeeded, const std::string &description, std::vector<std::vector<Value>>& output_rows) : succeeded(succeeded), description(description), output_rows(output_rows) {}
+
+    Status(const bool &succeeded, const std::string &description): succeeded(succeeded), description(description), output_rows(std::nullopt) {}
 };
-
-std::ostream &operator<<(std::ostream &os, Status& status);
-
-std::ostream& operator<<(std::ostream& os, std::vector<std::vector<Value>> &rows);
 
 
 class Engine {
@@ -37,10 +32,19 @@ public:
     Engine();
     bool table_exists(const std::string& name);
 
-    static void preetty_print_table(std::vector<std::string> &columns, std::vector<std::vector<Value>> &rows);
-    Status save_to_disk();
-    Status load_from_disk();
+    void load_from_file(std::ifstream &file);
+    void save_to_file(std::ostream &file);
+
+    static void save_table_to_file(std::ostream &file, const Table &table);
+
+
+    static void preetty_print_table(const std::vector<std::string> &columns, std::vector<std::vector<Value>> &rows);
+    static bool evaluate_logical_condition(Table table, LogicalCondition logical_condition, std::vector<Value> row);
+
     Status execute_command(const Command& command);
+
+
+    std::vector<std::string> list_tables();
 };
 
 

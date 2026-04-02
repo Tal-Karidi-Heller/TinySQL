@@ -3,52 +3,8 @@
 #include "tokenizer.h"
 #include "utils.h"
 
-template class VectorIterator<Token>;
 
-std::ostream &operator<<(std::ostream &os, const Value &value) {
-    if (std::holds_alternative<std::string>(value)) {
-        std::cout << (std::get<std::string>(value));
-    } else {
-        std::cout << std::get<int>(value);
-    }
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const std::vector<std::string> &vector) {
-    for (int i = 0; i < vector.size(); i++) {
-        std::cout << vector[i];
-        if (i < vector.size() - 1) {
-            std::cout << ", ";
-        }
-    }
-
-    return os;
-}
-
-std::ostream &operator<<(std::ostream &os, const std::vector<Column> &vector) {
-    for (int i = 0; i < vector.size(); i++) {
-        std::cout << vector[i].name << ", " << vector[i].type;
-        if (i < vector.size() - 1) {
-            std::cout << ", ";
-        }
-    }
-
-    return os;
-}
-
-std::optional<int> convert_to_number(const std::string &string) {
-    try {
-        int num = std::stoi(string);
-        return num;
-    } catch (const std::invalid_argument &e) {
-        return std::nullopt;
-    } catch (const std::out_of_range &e) {
-        return std::nullopt;
-    }
-}
-
-
-Parser::Parser(std::vector<Token> &tokenized_query) {
+Parser::Parser(const std::vector<Token> &tokenized_query) {
     this->tokenized_query = tokenized_query;
 }
 
@@ -58,8 +14,6 @@ SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
 
     std::string column = token_iterator.next().value;
 
-    std::cout << "column = " << column << std::endl;
-
     if (!token_iterator.not_empty())
         throw std::invalid_argument("No =");
 
@@ -68,23 +22,31 @@ SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
     if (!token_iterator.not_empty())
         throw std::invalid_argument("No value");
 
-    Value value = token_iterator.next().value;
+    Token c = token_iterator.next();
+    Value value;;
+
+    if (c.type == Token::NUMERIC_LITERAL)
+        value = std::stoi(c.value);
+    else
+        value = c.value;
 
     return SimpleCondition(column, SimpleCondition::EQUALS, value);
 }
 
 LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
-    std::stack<std::variant<Parentheses, LogicalCondition, LogicalOperator>> output;
+    if (!token_iterator.not_empty())
+        throw std::invalid_argument("Where clause must come after WHERE");
 
-    SimpleCondition c1 = read_condition(token_iterator);
+    std::stack<std::variant<Parentheses, LogicalCondition, LogicalOperator> > output;
+
+    SimpleCondition c1 = SimpleCondition();
     LogicalCondition current_condition = LogicalCondition(
-        LogicalOperator::AND,
-        c1
+        LogicalOperator::AND
     );
 
     int np = 0;
 
-    Token logical_op = token_iterator.next();
+    Token logical_op = Token("", Token::UNDEFINED);
 
     while (token_iterator.not_empty()) {
         if (logical_op.value == "OR" && current_condition.conditions.size() > 0) {
@@ -94,9 +56,12 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
         if (token_iterator.peek().value == "(") {
             np++;
 
-            output.push(current_condition);
+            if (logical_op.value != "OR" && current_condition.conditions.size() > 0)
+                // because we already pushed current_condition
+                output.push(current_condition);
             if (logical_op.value == "AND")
                 output.push(LogicalOperator::AND);
+
 
             output.push(Parentheses::OPEN);
 
@@ -119,26 +84,22 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
             }
         }
 
-        if (token_iterator.peek().value == ")") {
-            std::cout << ") exists" << std::endl;
+        if (token_iterator.not_empty() && token_iterator.peek().value == ")") {
             if (np < 1)
                 throw std::invalid_argument(") without (");
             np--;
             output.push(current_condition);
-            std::cout << "( push: " << current_condition;
 
             LogicalCondition c = LogicalCondition(
                 LogicalOperator::OR
             );
-            std::cout << "output size: " << output.size() << std::endl;
             while (!std::holds_alternative<Parentheses>(output.top())) {
                 c.conditions.push_back(std::get<LogicalCondition>(output.top()));
                 output.pop();
             }
             output.pop();
 
-            if (std::holds_alternative<LogicalOperator>(output.top())) {
-                std::cout << "Have AND" << std::endl;
+            if (!output.empty() && std::holds_alternative<LogicalOperator>(output.top())) {
                 LogicalCondition c_tag = LogicalCondition(
                     std::get<LogicalOperator>(output.top())
                 );
@@ -148,15 +109,20 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
                 output.pop();
                 c_tag.conditions.push_back(c);
 
-                output.push(c_tag);
-            }
-            else
-                output.push(c);
+                // output.push(c_tag);
+                current_condition = LogicalCondition(
+                    LogicalOperator::AND
+                );
+                current_condition.conditions.push_back(c_tag);
+            } else
+                current_condition = LogicalCondition(
+                    LogicalOperator::AND,
+                    std::vector<std::variant<SimpleCondition, LogicalCondition> >{
+                        c
+                    }
+                );
 
             token_iterator.next();
-            current_condition = LogicalCondition(
-                LogicalOperator::AND
-            );
         }
 
         if (token_iterator.not_empty())
@@ -167,8 +133,6 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
         output.push(current_condition);
 
     LogicalCondition final_output = LogicalCondition(LogicalOperator::OR);
-    std::cout << "np = " << np << std::endl;
-    std::cout << "size = " << output.size() << std::endl;
     while (!output.empty()) {
         if (std::holds_alternative<Parentheses>(output.top()))
             throw std::invalid_argument("Still ) in output");
@@ -177,97 +141,196 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
         output.pop();
     }
 
-    std::cout << "Finished 123123" << std::endl;
-
     return final_output;
 }
 
 
-Column Parser::get_column(std::vector<Token>::iterator &it, std::vector<Token>::iterator end) {
-    Column column;
-    std::cout << it->value << std::endl;
-    if (it->type != Token::Type::IDENTIFIER) {
+Column Parser::get_column(VectorIterator<Token> &it) {
+    if (it.empty() || it.peek().type != Token::Type::IDENTIFIER) {
         throw std::invalid_argument("");
     }
 
-    column.name = it->value;
-    ++it;
+    std::string column = it.next().value;
 
-    if (it == end || (it->value != "INTEGER" && it->value != "TEXT")) {
+    if (it.empty() || (it.peek().value != "INTEGER" && it.peek().value != "TEXT")) {
         throw std::invalid_argument("Valid type (INTEGER or TEXT) must come after column name");
     }
 
-    if (it->value == "INTEGER")
-        column.type = Column::Type::INTEGER;
-    else if (it->value == "TEXT")
-        column.type = Column::Type::TEXT;
+    Token type = it.next();
 
-    return column;
+    if (type.type != Token::KEYWORD || (type.value != "INTEGER" && type.value != "TEXT"))
+        throw std::invalid_argument("Invalid Type");
+
+    return Column(column, (type.value == "INTEGER") ? Column::Type::INTEGER : Column::TEXT);
 }
 
-Command Parser::get_commands() {
+Command Parser::get_command() {
     if (tokenized_query.size() < 1) {
         throw std::invalid_argument("Query must contain tokens.");
     }
 
     VectorIterator<Token> it = VectorIterator<Token>(tokenized_query.begin(), tokenized_query.end());
+
+    std::vector<std::string> columns;
+    bool all = false;
+
     if (it.peek().value == "SELECT") {
-    } else if (tokenized_query[0].value == "DROP") {
-        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
-        std::vector<Token>::iterator end = tokenized_query.end();
+        it.next();
+        while (it.not_empty() && it.peek().value != "FROM") {
+            Token c = it.next();
+            if (c.type == Token::KEYWORD) {
+                if (c.value == "*") {
+                    all = true;
+                } else
+                    throw std::invalid_argument("Keyword that is not * is not allowed here");
+            } else if (c.type == Token::IDENTIFIER) {
+                columns.push_back(c.value);
+            }
+
+            if (it.not_empty() && it.peek().value == ",")
+                it.next();
+        }
+
+        if (!it.not_empty())
+            throw std::invalid_argument("SELECT Query must contain FROM");
+
+        it.next(); // taking out FROM
+
+        std::string table_name = it.next().value;
+
+        SelectCommand select_command = SelectCommand(
+            columns, all, table_name
+        );
+
+        if (it.not_empty()) {
+            if (it.peek().value != "WHERE") {
+                throw std::invalid_argument("WHERE is the only that can come after table");
+            }
+
+            it.next(); // taking out WHERE
+            select_command.where = parse_where(it);
+        }
+
+        return select_command;
+    } else if (it.peek().value == "INSERT") {
+        it.next();
+        InsertCommand command;
+
+        if (it.empty() || it.next().value != "INTO")
+            throw std::invalid_argument("INTO must come after INSERT");
+
+        if (it.empty())
+            throw std::invalid_argument("Table name must come after INTO");
+
+        std::string destination = it.next().value;
+
+        command.destination = destination;
+
+        if (it.empty() || it.next().value != "VALUES")
+            throw std::invalid_argument("VALUES Must come after table name");
+
+        if (it.empty() || it.next().value != "(")
+            throw std::invalid_argument("( Must come after values");
+
+        while (it.not_empty() && it.peek().value != ")") {
+            Token c = it.next();
+            if (c.type == Token::STRING_LITERAL) {
+                command.values.push_back(c.value);
+            } else if (c.type == Token::NUMERIC_LITERAL) {
+                command.values.push_back(std::stoi(c.value));
+            } else
+                throw std::invalid_argument("Values must be LITERALS");
+
+            if (it.peek().value == ",")
+                it.next();
+            else if (it.peek().value != ")")
+                throw std::invalid_argument("INSERT query must contain , between each column definition");
+        }
+
+        return command;
+    } else if (it.peek().value == "DROP") {
         DropTableCommand command;
-        if (it->value != "TABLE") {
+        it.next();
+        if (it.empty() || it.peek().value != "TABLE") {
             throw std::invalid_argument("TABLE keyword must come after DROP");
         }
 
-        it++;
+        it.next();
 
-        if (it == end) {
+        if (it.empty()) {
             throw std::invalid_argument("Table name must come after TABLE keyword.");
         }
 
-        command.table = it->value;
-
-        std::cout << command.table << std::endl;
+        command.table = it.next().value;
 
         return command;
-    } else if (tokenized_query[0].value == "CREATE") {
-        std::vector<Token>::iterator it = tokenized_query.begin() + 1;
-        std::vector<Token>::iterator end = tokenized_query.end();
+    } else if (it.peek().value == "CREATE") {
+        it.next();
         CreateTableCommand create_table_command;
 
-        if (it == end || it->value != "TABLE")
+        if (it.empty() || it.peek().value != "TABLE")
             throw std::invalid_argument("TABLE Must come after CREATE");
 
-        ++it;
+        it.next();
 
-        if (it == end)
+        if (it.empty())
             throw std::invalid_argument("Table Name must come after TABLE");
 
-        create_table_command.name = it->value;
-        create_table_command.columns = std::vector<Column>(0);
+        create_table_command.name = it.next().value;
+        create_table_command.columns = std::vector<Column>();
 
-        ++it;
-
-        if (it == end || it->value != "(") {
+        if (it.empty() || it.peek().value != "(") {
             throw std::invalid_argument("Query must have(<col> <type>, ...)");
         }
 
-        ++it;
+        it.next();
 
-        while (it != end && it->value != ")") {
-            if (it->value == ",")
-                ++it;
-            Column c = get_column(it, end);
+        while (it.not_empty() && it.peek().value != ")") {
+            Column c = get_column(it);
             create_table_command.columns.push_back(c);
-            ++it;
+            if (it.not_empty() && it.peek().value == ",")
+                it.next();
         }
 
-        std::cout << "columns: " << create_table_command.columns << std::endl;;
-
         return create_table_command;
+    } else if (it.peek().value == "DELETE") {
+        it.next();
+        if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "FROM") {
+            throw std::invalid_argument("FROM must come after DELETE");
+        }
+
+        it.next(); // Take out FROM.
+
+        if (it.empty() || it.peek().type != Token::IDENTIFIER)
+            throw std::invalid_argument("Table name must come after FROM");
+
+        std::string table = it.next().value;
+
+        if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "WHERE")
+            throw std::invalid_argument("WHERE Must come after table name");
+
+        it.next();
+
+        if (it.empty())
+            throw std::invalid_argument("The condition must come after WHERE");
+
+        LogicalCondition where = parse_where(it);
+
+        return DeleteFromCommand(
+            table, where
+        );
+    } else if (it.peek().value == "DROP") {
+        it.next();
+        if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "TABLE")
+            throw std::invalid_argument("TABLE Must come after DROP");
+
+        it.next();
+
+        if (it.empty())
+            throw std::invalid_argument("Table name must come after TABLE keyword");
+
+        return DropTableCommand(it.peek().value);
     } else {
         throw std::invalid_argument("Not an available command.");
     }
 }
-
