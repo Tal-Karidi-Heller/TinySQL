@@ -8,7 +8,7 @@
 
 using Value = std::variant<int, std::string>;
 
-inline std::ostream& operator<<(std::ostream &os, const Value &v) {
+inline std::ostream &operator<<(std::ostream &os, const Value &v) {
     if (std::holds_alternative<int>(v))
         os << std::get<int>(v);
     else
@@ -19,20 +19,28 @@ inline std::ostream& operator<<(std::ostream &os, const Value &v) {
 
 struct Column {
     std::string name;
-    enum Type {INTEGER, TEXT } type;
 
-    Column(const std::string &name, const enum Type type) : name(name), type(type) {}
+    enum Type { INTEGER, TEXT } type;
+
+    Column(const std::string &name, const enum Type type) : name(name), type(type) {
+    }
 };
 
-inline std::ostream& operator<<(std::ostream &os, const Column::Type t) {
+inline std::string operator+(const std::string &s, const Column::Type t) {
     if (t == Column::INTEGER)
-        os << "INTEGER";
-    else if (t == Column::TEXT)
-        os << "TEXT";
+        return s + "INTEGER";
+    else
+        return s + "TEXT";
+}
+
+inline std::ostream &operator<<(std::ostream &os, const Column::Type t) {
+    std::string _t = std::string("") + t;
+    os << _t;
     return os;
 }
 
-inline std::ostream& operator<<(std::ostream &os, const Column c) {
+
+inline std::ostream &operator<<(std::ostream &os, const Column c) {
     os << "{ name = " << c.name << " , type = " << c.type << " }";
     return os;
 }
@@ -40,11 +48,11 @@ inline std::ostream& operator<<(std::ostream &os, const Column c) {
 struct Table {
     std::string name;
     std::vector<Column> columns;
-    std::vector<std::vector<Value>> rows;
+    std::vector<std::vector<Value> > rows;
 
-    std::optional<std::tuple<Column, int>> get_column(std::string& column_name) {
+    std::optional<std::tuple<Column, int> > get_column(std::string &column_name) {
         int i = 0;
-        for (Column& c : this->columns) {
+        for (Column &c: this->columns) {
             if (c.name == column_name) {
                 return std::tuple<Column, int>(c, i);
             }
@@ -55,14 +63,16 @@ struct Table {
 
     inline std::vector<std::string> get_columns_string() {
         std::vector<std::string> output;
-        for (const Column &c : columns)
+        for (const Column &c: columns)
             output.push_back(c.name);
         return output;
     }
 
-    Table(const std::string& name, const std::vector<Column>& columns): name(name), columns(columns) {}
+    Table(const std::string &name, const std::vector<Column> &columns) : name(name), columns(columns) {
+    }
 
-    Table(const std::string& name): name(name) {}
+    Table(const std::string &name) : name(name) {
+    }
 };
 
 #endif

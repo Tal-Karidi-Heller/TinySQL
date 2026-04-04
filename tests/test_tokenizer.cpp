@@ -13,7 +13,6 @@ TEST(TokenizerTests, SelectTest) {
     std::vector<Token> vector = tokenize_query(
         query
     );
-    std::cout << "VECTOR SIZE = " << vector.size() << std::endl;
 
     EXPECT_TOKEN(vector[0], Token("SELECT", Token::KEYWORD));
 

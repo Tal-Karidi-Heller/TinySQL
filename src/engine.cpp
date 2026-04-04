@@ -16,7 +16,9 @@
 
 
 int getTerminalWidth() {
-    return 80;
+    /**
+     * @return Returns the width of the terminal running this executable.
+    */
 #ifdef _WIN32
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
@@ -33,6 +35,10 @@ int getTerminalWidth() {
 
 
 bool Engine::table_exists(const std::string &name) {
+    /**
+     * @param name The name of the table.
+     * @return Returns whether there is table named name.
+    */
     for (const auto &[key, value]: this->tables_map) {
         if (key == name) {
             return true;
@@ -45,7 +51,14 @@ Engine::Engine() {
     this->tables_map = std::unordered_map<std::string, Table>(0);
 }
 
-void Engine::preetty_print_table(const std::vector<std::string> &columns, std::vector<std::vector<Value> > &rows) {
+void Engine::pretty_print_table(const std::vector<std::string> &columns, std::vector<std::vector<Value> > &rows) {
+    /**
+     * @brief prints the table with line and column seperators.
+     * Prints based on the terminal window size.
+     *
+     * @param columns The columns to print (to support SELECT only a subsert of columns).
+     * @param rows The rows to print.
+    */
     int max_column_width = getTerminalWidth() / columns.size();
 
     for (int i = 0; i < columns.size(); i++)
@@ -99,9 +112,20 @@ void Engine::preetty_print_table(const std::vector<std::string> &columns, std::v
     std::cout << std::endl;
 }
 
-bool Engine::evaluate_logical_condition(Table table, LogicalCondition logical_condition, std::vector<Value> row) {
+bool Engine::evaluate_logical_condition(Table &table, LogicalCondition &logical_condition, std::vector<Value> &row) {
+    /**
+     * @brief Recursively evaluates a parsed WHERE clause condition against a row.
+     *
+     * A @c LogicalCondition wrapping a single operand evaluates to that operand's result,
+     * regardless of whether it uses AND or OR.
+     *
+     * @param table The table the row belongs; Used for validating types (e.g a integer column isn't compared to a string literal).
+     * @param logical_condition The parsed logical condition to evaluate.
+     * @param row The row to evaluate the condition against.
+     * @return @c true if the row satisfies the condition, @c false otherwise.
+    */
     if (logical_condition.conditions.size() == 0) {
-        throw std::invalid_argument("NO conditions");
+        throw EngineException("NO conditions");
     }
 
     std::optional<bool> result = std::nullopt;
@@ -111,13 +135,19 @@ bool Engine::evaluate_logical_condition(Table table, LogicalCondition logical_co
             auto &simple_c = std::get<SimpleCondition>(c);
             auto r = table.get_column(simple_c.column);
             if (!r.has_value())
-                throw std::invalid_argument(
+                throw EngineException(
                     "Column " + simple_c.column + "does not exist in table \"" + table.name + "\"");
 
             const auto [column_obj, column_index] = r.value();
 
-            if (std::holds_alternative<int>(simple_c.value) != (column_obj.type == Column::INTEGER))
-                throw std::invalid_argument("Type mismatch between usage of " + simple_c.column);
+            Column::Type query_type = (std::holds_alternative<int>(simple_c.value))
+                                          ? Column::Type::INTEGER
+                                          : Column::Type::TEXT;
+
+            if (query_type != column_obj.type)
+                throw EngineException(
+                    "Type mismatch between usage of " + simple_c.column + ": table-type is " + column_obj.type +
+                    ", query-type is " + query_type);
 
             bool _r = row[column_index] == simple_c.value;
             if (!result.has_value())
@@ -148,20 +178,28 @@ bool Engine::evaluate_logical_condition(Table table, LogicalCondition logical_co
 }
 
 Status Engine::execute_command(const Command &command) {
+    /**
+     * @brief Executes a parsed SQL command.
+     *
+     * Dispatches the command to the appropriate handler based on its type
+     * (e.g., @c SelectCommand, @c CreateTableCommand, @c InsertCommand).
+     *
+     * @param command The parsed command to execute.
+     * @return A @c Status indicating whether execution succeeded or failed.
+     */
     if (std::holds_alternative<SelectCommand>(command)) {
         SelectCommand select_command = std::get<SelectCommand>(command);
         if (!table_exists(select_command.table_name)) {
-            throw std::invalid_argument("Table does not exist");
+            throw EngineException("Table does not exist");
         }
 
         Table &table = tables_map.at(select_command.table_name);
         for (std::string column: select_command.columns)
             if (!table.get_column(column).has_value())
-                throw std::invalid_argument("Column does not exist in table");
+                throw EngineException("Column does not exist in table");
 
 
         std::vector<std::vector<Value> > output_rows;
-        // TODO: We need to add a verification of the where clause.
         for (std::vector<Value> &row: table.rows) {
             bool where = (select_command.where.has_value())
                              ? evaluate_logical_condition(table, select_command.where.value(), row)
@@ -188,7 +226,7 @@ Status Engine::execute_command(const Command &command) {
             columns.push_back(c.name);
 
 
-        this->preetty_print_table(
+        this->pretty_print_table(
             (select_command.all) ? table.get_columns_string() : select_command.columns,
             output_rows
         );
@@ -202,7 +240,7 @@ Status Engine::execute_command(const Command &command) {
         CreateTableCommand create_table_command = std::get<CreateTableCommand>(command);
 
         if (table_exists(create_table_command.name))
-            throw std::invalid_argument("Table " + create_table_command.name + " already exists");
+            throw EngineException("Table " + create_table_command.name + " already exists");
 
         Table table = Table(
             create_table_command.name,
@@ -218,10 +256,6 @@ Status Engine::execute_command(const Command &command) {
 
         auto empty = std::vector<std::vector<Value> >(0);
 
-        for (const auto &[key, value]: this->tables_map) {
-            std::cout << key << ", ";
-        }
-
         return Status(
             true,
             "Created table",
@@ -230,12 +264,12 @@ Status Engine::execute_command(const Command &command) {
     } else if (std::holds_alternative<InsertCommand>(command)) {
         InsertCommand insert_command = std::get<InsertCommand>(command);
         if (table_exists(insert_command.destination) == false)
-            throw std::invalid_argument("Table does not exist.");
+            throw EngineException("Table does not exist.");
 
         // Validate types:
         Table &table = this->tables_map.at(insert_command.destination);
         if (table.columns.size() != insert_command.values.size())
-            throw std::invalid_argument("InsertCommand must contain values for each column. Not less Not more.");
+            throw EngineException("InsertCommand must contain values for each column. Not less Not more.");
 
         for (int i = 0; i < table.columns.size(); i++) {
             Column::Type query_column_type = (std::holds_alternative<int>(insert_command.values[i]))
@@ -246,7 +280,7 @@ Status Engine::execute_command(const Command &command) {
                 std::string value_string = (std::holds_alternative<int>(insert_command.values[i]))
                                                ? std::to_string(std::get<int>(insert_command.values[i]))
                                                : std::get<std::string>(insert_command.values[i]);
-                throw std::invalid_argument(
+                throw EngineException(
                     "Wrong Value Type for column " + table.columns[i].name + ", with value = " + value_string + "=");
             }
         }
@@ -264,7 +298,7 @@ Status Engine::execute_command(const Command &command) {
     } else if (std::holds_alternative<DeleteFromCommand>(command)) {
         DeleteFromCommand delete_from_command = std::get<DeleteFromCommand>(command);
         if (!table_exists(delete_from_command.table))
-            throw std::invalid_argument("Table does not exist in database.");
+            throw EngineException("Table does not exist in database.");
 
         Table &table = tables_map.at(delete_from_command.table);
         std::vector<std::vector<Value> > rows_deleted;
@@ -278,7 +312,7 @@ Status Engine::execute_command(const Command &command) {
             }
         }
 
-        this->preetty_print_table(
+        this->pretty_print_table(
             table.get_columns_string(), rows_deleted
         );
 
@@ -286,6 +320,18 @@ Status Engine::execute_command(const Command &command) {
             true,
             "DELETED The Following lines",
             rows_deleted
+        );
+    } else if (std::holds_alternative<DropTableCommand>(command)) {
+        DropTableCommand drop_table_command = std::get<DropTableCommand>(command);
+
+        if (this->table_exists(drop_table_command.table) == false)
+            throw EngineException("Table " + drop_table_command.table + " does not exist");
+
+        this->tables_map.erase(drop_table_command.table);
+
+        return Status(
+            true,
+            "Deleted table"
         );
     } else {
         return Status(
@@ -296,6 +342,15 @@ Status Engine::execute_command(const Command &command) {
 }
 
 void Engine::save_table_to_file(std::ostream &file, const Table &table) {
+    /**
+     * @brief Saves a single table to the output stream in the engine's storage format.
+     *
+     * Writes the table's name, column definitions, and rows sequentially,
+     * wrapped in TABLE DEFINITION / END markers.
+     *
+     * @param file The output stream to write to.
+     * @param table The table to serialize.
+     */
     file << "TABLE DEFINITION " << table.name << std::endl;
 
     file << "COLUMNS [ ";
@@ -316,30 +371,45 @@ void Engine::save_table_to_file(std::ostream &file, const Table &table) {
 }
 
 void Engine::save_to_file(std::ostream &file) {
-    // Define columns
+    /**
+    * @brief Serializes all tables in the engine to the output stream.
+    *
+    * Iterates over all tables in @c tables_map and calls @c save_table_to_file for each.
+    *
+    * @param file The output stream to write to.
+    */
     for (const auto &[table_name, table]: this->tables_map) {
         save_table_to_file(file, table);
     }
 }
 
 void Engine::load_from_file(std::ifstream &file) {
+    /**
+     * @brief Loads and restores tables from a previously saved database file.
+     *
+     * Parses the file line by line, reconstructing table definitions, column schemas, and rows.
+     * Throws @c LoadException on malformed input or duplicate table names or if the file isn't available.
+     *
+     * @param file The input file stream to read from.
+     */
     if (file.is_open()) {
-        std::cout << "STARTED" << std::endl;
         std::string line;
         std::optional<Table> current_table = std::nullopt;
         while (std::getline(file, line)) {
-            std::cout << line << std::endl;
             std::vector<Token> v = tokenize_query(line);
             VectorIterator<Token> it = VectorIterator<Token>(v.begin(), v.end());
-
-            std::cout << it.peek() << std::endl;
 
             if (it.empty())
                 continue;
 
             if (it.peek().value == "TABLE") {
                 it.next(); // TAKING OUT TABLE
-                it.next(); // TAKING OUT DEFINITION
+
+                if (not it.expect(Token("DEFINITION", Token::IDENTIFIER)))
+                    throw LoadException("After TABLE DEFINITION must come");
+
+                if (it.empty())
+                    throw LoadException("table name must come after TABLE DEFINITION");
 
                 std::string table_name = it.next().value;
                 current_table = Table(
@@ -348,10 +418,8 @@ void Engine::load_from_file(std::ifstream &file) {
             } else if (it.peek().value == "COLUMNS") {
                 // Columns definitions
                 it.next();
-                if (it.empty() || it.peek().value != "[")
-                    throw std::runtime_error("INVALID FILE");
-
-                it.next();
+                if (not it.expect(Token("[", Token::IDENTIFIER)))
+                    throw LoadException("INVALID FILE");
 
                 std::vector<Column> columns;
                 while (it.not_empty()) {
@@ -359,7 +427,7 @@ void Engine::load_from_file(std::ifstream &file) {
                     std::string column_type = it.next().value;
 
                     if (column_type != "TEXT" && column_type != "INTEGER")
-                        throw std::runtime_error("INVALID COLUMN TYPE");
+                        throw LoadException("INVALID COLUMN TYPE");
 
                     columns.push_back(
                         Column(
@@ -368,15 +436,20 @@ void Engine::load_from_file(std::ifstream &file) {
                         )
                     );
 
-                    it.next(); // Expecting , or ]
+                    if (!it.expect(Token(",", Token::SYMBOL), false) && !it.
+                        expect(Token("]", Token::IDENTIFIER), false))
+                        throw LoadException("After each column definition a , or ] should appear");
+
+                    it.next();
                 }
 
                 if (!current_table.has_value())
-                    throw std::runtime_error("COLUMNS DEFINITION before TABLE DEFINITION");
+                    throw LoadException("COLUMNS DEFINITION before TABLE DEFINITION");
+
                 current_table.value().columns = columns;
             } else if (it.peek().value == "[") {
                 it.next();
-                // THIS IS A ROW.
+
                 std::vector<Value> values;
                 while (it.not_empty() && it.peek().value != "]") {
                     values.push_back(
@@ -392,17 +465,16 @@ void Engine::load_from_file(std::ifstream &file) {
                 }
 
                 if (!current_table.has_value())
-                    throw std::runtime_error("ROW APPEND before TABLE DEFINITION");
+                    throw LoadException("ROW APPEND before TABLE DEFINITION");
 
                 current_table.value().rows.push_back(values);
-            }
-            else if (it.peek().value == "END") {
+            } else if (it.peek().value == "END") {
                 it.next();
                 if (!current_table.has_value())
-                    throw std::runtime_error("END Before TABLE DEFINITION");
+                    throw LoadException("END Before TABLE DEFINITION");
 
                 if (this->table_exists(current_table.value().name))
-                    throw std::runtime_error("TABLE ALREADY EXISTS");
+                    throw LoadException("TABLE ALREADY EXISTS");
 
                 this->tables_map.insert(
                     {
@@ -410,17 +482,21 @@ void Engine::load_from_file(std::ifstream &file) {
                         current_table.value()
                     }
                 );
-                std::cout << "ADDED TABLE " << current_table.value().name << std::endl;
             }
         }
 
         file.close();
     } else {
-        std::cout << "HAVEN'T STARTED" << std::endl;
+        throw EngineException("File is not available");
     }
 }
 
 std::vector<std::string> Engine::list_tables() {
+    /**
+     * @brief Returns the names of all tables currently loaded in the engine.
+     *
+     * @return A vector of table name strings.
+    */
     std::vector<std::string> output;
     for (const auto &[key, value]: this->tables_map)
         output.push_back(key);

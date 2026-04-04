@@ -6,8 +6,12 @@
 #define MY_PROJECT_UTILS_H
 #include <vector>
 #include <ostream>
-#include  <iostream>
-#include "tokenizer.h"
+#include <iostream>
+#include <optional>   // Added
+#include <stdexcept>   // Added
+#include <exception>  // Added
+#include "token.h"
+#include "table.h"
 
 template<typename T>
 class VectorIterator {
@@ -47,13 +51,36 @@ public:
         int i = 0;
         auto c = start;
         while (c != end) {
-            std::cout << c.base();
+            std::cout << *c;
+            ++c;
         }
     };
+
+    inline bool expect(const T &value, const bool take_out) {
+        if (this->empty() || this->peek() != value)
+            return false;
+        if (take_out)
+            this->next();
+        return true;
+    }
+
+    inline bool expect(const T &value) {
+        return this->expect(value, true);
+    }
 };
 
-template class VectorIterator<Token>;
 template class VectorIterator<std::string>;
+template class VectorIterator<Token>;
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const std::optional<T>& v) {
+    if (!v.has_value())
+        os << "NULL";
+    else
+        os << v.value();
+
+    return os;
+}
 
 template <typename T>
 inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
@@ -61,7 +88,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
     for (typename std::vector<T>::size_type i = 0; i < v.size(); ++i) {
         os << v[i];
         if (i != v.size() - 1) {
-            os << ", "; // Comma separation
+            os << ", ";
         }
     }
     os << " ]";
@@ -81,16 +108,6 @@ inline bool operator==(const std::vector<T>& _1, const std::vector<T> &_2) {
     return true;
 }
 
-template <typename T>
-inline std::ostream& operator<<(std::ostream& os, const std::optional<T>& v) {
-    if (!v.has_value())
-        os << "NULL";
-    else
-        os << v.value();
-
-    return os;
-}
-
 inline std::optional<int> convert_to_number(const std::string &string) {
     try {
         int num = std::stoi(string);
@@ -101,5 +118,12 @@ inline std::optional<int> convert_to_number(const std::string &string) {
         return std::nullopt;
     }
 }
+
+class ExpectedException : public std::exception {
+public:
+    virtual ~ExpectedException() override = default;
+    virtual const char* what() const noexcept override = 0;
+};
+
 
 #endif

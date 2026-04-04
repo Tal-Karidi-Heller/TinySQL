@@ -1,10 +1,9 @@
 #include <iostream>
-#include <cstdio>
 #include "tokenizer.h"
 #include "parser.h"
-#include "utils.h"
 #include "engine.h"
 #include <variant>
+#include <filesystem>
 
 std::vector<Status> execute_queries(std::vector<std::string> queries, Engine &engine) {
     std::vector<Status> outputs;
@@ -25,7 +24,7 @@ std::vector<Status> execute_queries(std::vector<std::string> queries) {
 }
 
 void test() {
-    std::vector<std::string> queries {
+    std::vector<std::string> queries{
         "CREATE TABLE t1 (a INTEGER, b INTEGER, c TEXT)",
         "INSERT INTO t1 VALUES (2, 3, \"1\")",
         "INSERT INTO t1 VALUES (4, 5, \"2\")",
@@ -38,25 +37,22 @@ void test() {
 
     Engine engine;
     execute_queries(queries, engine);
-    std::ofstream file("tables.txt");
+    std::ofstream file("tables.db");
     engine.save_to_file(file);
 }
 
 
 int main() {
     Engine engine;
-    std::ifstream file = std::ifstream("/Users/tal/Desktop/TinySql/build/tables.txt");
-    engine.load_from_file(file);
-    std::cout << "SUCESS" << std::endl;
-    std::cout << engine.list_tables() << std::endl;
-    execute_queries(
-        std::vector<std::string> {
-            "SELECT * FROM t1",
-            "SELECT * FROM t2"
-        },
-        engine
-    );
-    return 0;
+
+    if (std::filesystem::exists("tables.db")) {
+        std::ifstream file("tables.db");
+        std::cout << "Found a data-save. using tables.db" << std::endl;
+        engine.load_from_file(
+            file
+        );
+    }
+
     while (true) {
         try {
             std::cout << "Enter Input: ";
@@ -66,22 +62,25 @@ int main() {
             if (input == ".tables")
                 std::cout << engine.list_tables() << std::endl;
             else if (input == ".quit") {
-                std::ofstream file = std::ofstream("tables.txt");
+                std::ofstream file = std::ofstream("tables.db");
                 engine.save_to_file(
                     file
                 );
                 break;
-            }
-            else {
+            } else {
                 std::vector<Token> vector = tokenize_query(input);
-                print_vector(vector);
 
                 Parser parser(vector);
                 Command command = parser.get_command();
                 Status status = engine.execute_command(command);
             }
-        } catch (std::exception& e) {
-            std::cerr << "Caught standard exception: " << e.what() << std::endl;
+        }
+        catch (ExpectedException &e) {
+            std::cerr << "Caught expected exception: " << e.what() << std::endl;
+        }
+
+        catch (std::exception &e) {
+            std::cerr << "Caught un-expected exception: " << e.what() << std::endl;
             std::cout << "Command Failed" << std::endl;
         }
     }

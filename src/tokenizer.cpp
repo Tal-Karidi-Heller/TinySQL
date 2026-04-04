@@ -13,6 +13,9 @@ const std::string keyword_arguments[] = {
     "WHERE",
     "INTEGER",
     "TEXT",
+    "VALUES",
+    "AND",
+    "OR",
     "*"
 };
 
@@ -84,6 +87,12 @@ Token::Type classify_token(std::string string, std::vector<Token> classified_tok
 }
 
 std::vector<Token> tokenize_query(const std::string &query) {
+    /*
+     * @brief Tokenizes the query.
+     * Splits on spaces and , and parentheses.
+     *
+     * @return A vector of tokens.
+    */
     std::vector<Token> output;
 
     Token currentToken;

@@ -9,18 +9,25 @@ Parser::Parser(const std::vector<Token> &tokenized_query) {
 }
 
 SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
+    /**
+        * @brief Parses a single equality condition (e.g., `a = 2`) from the WHERE clause.
+        * Advances @p token_iterator past the parsed tokens.
+        *
+        * @param token_iterator Iterator to the current token position; advanced in-place.
+        * @return The parsed condition.
+    */
     if (!token_iterator.not_empty())
-        throw std::invalid_argument("No column");
+        throw ParsingException("No column");
 
     std::string column = token_iterator.next().value;
 
     if (!token_iterator.not_empty())
-        throw std::invalid_argument("No =");
+        throw ParsingException("No =");
 
     std::string equal_op = token_iterator.next().value;
 
     if (!token_iterator.not_empty())
-        throw std::invalid_argument("No value");
+        throw ParsingException("No value");
 
     Token c = token_iterator.next();
     Value value;;
@@ -34,8 +41,14 @@ SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
 }
 
 LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
+    /**
+     * @brief Parses a WHERE clause (possibly nested with paranthesses).
+     *
+     * @param token_iterator Iterator to the current token position; advanced in-place.
+     * @return The parsed WHERE clause; Tree structure. Can be evaluated using recursion.
+    */
     if (!token_iterator.not_empty())
-        throw std::invalid_argument("Where clause must come after WHERE");
+        throw ParsingException("Where clause must come after WHERE");
 
     std::stack<std::variant<Parentheses, LogicalCondition, LogicalOperator> > output;
 
@@ -49,6 +62,8 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
     Token logical_op = Token("", Token::UNDEFINED);
 
     while (token_iterator.not_empty()) {
+        if (logical_op.value != "OR" and logical_op.value != "AND" and logical_op.value != "")
+            throw ParsingException("Invalid logical operation");
         if (logical_op.value == "OR" && current_condition.conditions.size() > 0) {
             output.push(current_condition);
         }
@@ -86,7 +101,7 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
 
         if (token_iterator.not_empty() && token_iterator.peek().value == ")") {
             if (np < 1)
-                throw std::invalid_argument(") without (");
+                throw ParsingException(") without (");
             np--;
             output.push(current_condition);
 
@@ -135,7 +150,7 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
     LogicalCondition final_output = LogicalCondition(LogicalOperator::OR);
     while (!output.empty()) {
         if (std::holds_alternative<Parentheses>(output.top()))
-            throw std::invalid_argument("Still ) in output");
+            throw ParsingException("Still ) in output");
 
         final_output.conditions.push_back(std::get<LogicalCondition>(output.top()));
         output.pop();
@@ -146,27 +161,39 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
 
 
 Column Parser::get_column(VectorIterator<Token> &it) {
+    /**
+     * @brief Returns a single column (e.g, `a INTEGER`) in the CreateCommand.
+     * Advances @p it past the parsed tokens.
+     *
+     * @param it Iterator to the current token position; advanced in-place.
+     * @return The parsed column.
+    */
     if (it.empty() || it.peek().type != Token::Type::IDENTIFIER) {
-        throw std::invalid_argument("");
+        throw ParsingException("Column in CREATE query must contain column name and than type");
     }
 
     std::string column = it.next().value;
 
     if (it.empty() || (it.peek().value != "INTEGER" && it.peek().value != "TEXT")) {
-        throw std::invalid_argument("Valid type (INTEGER or TEXT) must come after column name");
+        throw ParsingException("Valid type (INTEGER or TEXT) must come after column name");
     }
 
     Token type = it.next();
 
     if (type.type != Token::KEYWORD || (type.value != "INTEGER" && type.value != "TEXT"))
-        throw std::invalid_argument("Invalid Type");
+        throw ParsingException("Invalid Type");
 
     return Column(column, (type.value == "INTEGER") ? Column::Type::INTEGER : Column::TEXT);
 }
 
 Command Parser::get_command() {
+    /**
+     * @brief Parses the tokenized SQL query provided to the Parser constructor.
+     *
+     * @return A @c Command variant representing the parsed query (e.g., @c SelectCommand, @c CreateCommand).
+    */
     if (tokenized_query.size() < 1) {
-        throw std::invalid_argument("Query must contain tokens.");
+        throw ParsingException("Query must contain tokens.");
     }
 
     VectorIterator<Token> it = VectorIterator<Token>(tokenized_query.begin(), tokenized_query.end());
@@ -182,7 +209,7 @@ Command Parser::get_command() {
                 if (c.value == "*") {
                     all = true;
                 } else
-                    throw std::invalid_argument("Keyword that is not * is not allowed here");
+                    throw ParsingException("Keyword that is not * is not allowed here");
             } else if (c.type == Token::IDENTIFIER) {
                 columns.push_back(c.value);
             }
@@ -192,7 +219,7 @@ Command Parser::get_command() {
         }
 
         if (!it.not_empty())
-            throw std::invalid_argument("SELECT Query must contain FROM");
+            throw ParsingException("SELECT Query must contain FROM");
 
         it.next(); // taking out FROM
 
@@ -204,7 +231,7 @@ Command Parser::get_command() {
 
         if (it.not_empty()) {
             if (it.peek().value != "WHERE") {
-                throw std::invalid_argument("WHERE is the only that can come after table");
+                throw ParsingException("WHERE is the only that can come after table");
             }
 
             it.next(); // taking out WHERE
@@ -217,20 +244,20 @@ Command Parser::get_command() {
         InsertCommand command;
 
         if (it.empty() || it.next().value != "INTO")
-            throw std::invalid_argument("INTO must come after INSERT");
+            throw ParsingException("INTO must come after INSERT");
 
         if (it.empty())
-            throw std::invalid_argument("Table name must come after INTO");
+            throw ParsingException("Table name must come after INTO");
 
         std::string destination = it.next().value;
 
         command.destination = destination;
 
         if (it.empty() || it.next().value != "VALUES")
-            throw std::invalid_argument("VALUES Must come after table name");
+            throw ParsingException("VALUES Must come after table name");
 
         if (it.empty() || it.next().value != "(")
-            throw std::invalid_argument("( Must come after values");
+            throw ParsingException("( Must come after values");
 
         while (it.not_empty() && it.peek().value != ")") {
             Token c = it.next();
@@ -239,12 +266,12 @@ Command Parser::get_command() {
             } else if (c.type == Token::NUMERIC_LITERAL) {
                 command.values.push_back(std::stoi(c.value));
             } else
-                throw std::invalid_argument("Values must be LITERALS");
+                throw ParsingException("Values must be LITERALS");
 
             if (it.peek().value == ",")
                 it.next();
             else if (it.peek().value != ")")
-                throw std::invalid_argument("INSERT query must contain , between each column definition");
+                throw ParsingException("INSERT query must contain , between each column definition");
         }
 
         return command;
@@ -252,13 +279,13 @@ Command Parser::get_command() {
         DropTableCommand command;
         it.next();
         if (it.empty() || it.peek().value != "TABLE") {
-            throw std::invalid_argument("TABLE keyword must come after DROP");
+            throw ParsingException("TABLE keyword must come after DROP");
         }
 
         it.next();
 
         if (it.empty()) {
-            throw std::invalid_argument("Table name must come after TABLE keyword.");
+            throw ParsingException("Table name must come after TABLE keyword.");
         }
 
         command.table = it.next().value;
@@ -269,18 +296,18 @@ Command Parser::get_command() {
         CreateTableCommand create_table_command;
 
         if (it.empty() || it.peek().value != "TABLE")
-            throw std::invalid_argument("TABLE Must come after CREATE");
+            throw ParsingException("TABLE Must come after CREATE");
 
         it.next();
 
         if (it.empty())
-            throw std::invalid_argument("Table Name must come after TABLE");
+            throw ParsingException("Table Name must come after TABLE");
 
         create_table_command.name = it.next().value;
         create_table_command.columns = std::vector<Column>();
 
         if (it.empty() || it.peek().value != "(") {
-            throw std::invalid_argument("Query must have(<col> <type>, ...)");
+            throw ParsingException("Query must have(<col> <type>, ...)");
         }
 
         it.next();
@@ -296,23 +323,23 @@ Command Parser::get_command() {
     } else if (it.peek().value == "DELETE") {
         it.next();
         if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "FROM") {
-            throw std::invalid_argument("FROM must come after DELETE");
+            throw ParsingException("FROM must come after DELETE");
         }
 
         it.next(); // Take out FROM.
 
         if (it.empty() || it.peek().type != Token::IDENTIFIER)
-            throw std::invalid_argument("Table name must come after FROM");
+            throw ParsingException("Table name must come after FROM");
 
         std::string table = it.next().value;
 
         if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "WHERE")
-            throw std::invalid_argument("WHERE Must come after table name");
+            throw ParsingException("WHERE Must come after table name");
 
         it.next();
 
         if (it.empty())
-            throw std::invalid_argument("The condition must come after WHERE");
+            throw ParsingException("The condition must come after WHERE");
 
         LogicalCondition where = parse_where(it);
 
@@ -322,15 +349,15 @@ Command Parser::get_command() {
     } else if (it.peek().value == "DROP") {
         it.next();
         if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "TABLE")
-            throw std::invalid_argument("TABLE Must come after DROP");
+            throw ParsingException("TABLE Must come after DROP");
 
         it.next();
 
         if (it.empty())
-            throw std::invalid_argument("Table name must come after TABLE keyword");
+            throw ParsingException("Table name must come after TABLE keyword");
 
         return DropTableCommand(it.peek().value);
     } else {
-        throw std::invalid_argument("Not an available command.");
+        throw ParsingException("Not an available command.");
     }
 }

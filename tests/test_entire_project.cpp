@@ -120,8 +120,6 @@ TEST(EntireProject_Tests, CreateAndDelete) {
         )
     );
 
-    std::cout << delete_output.output_rows.value()[1];
-
     EXPECT_EQ(
         delete_output.output_rows.value()[2],
         (
@@ -168,6 +166,6 @@ TEST(EntireProject_Tests, Invalid_WhereClause) {
         engine.execute_command(
             parser.get_command()
         ),
-        std::invalid_argument
+        EngineException
     );
 }

@@ -11,12 +11,12 @@ add_library(
 )
 
 add_executable(
-        my_app
+        main
         main.cpp
 )
 
 target_link_libraries(
-        my_app
+        main
         PRIVATE
         app_logic
 )
