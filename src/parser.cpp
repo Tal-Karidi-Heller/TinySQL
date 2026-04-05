@@ -87,19 +87,9 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
                 LogicalOperator::AND,
                 c1
             );
-        } else {
-            c1 = read_condition(token_iterator);
-            if (logical_op.value == "AND") {
-                current_condition.conditions.push_back(c1);
-            } else {
-                current_condition = LogicalCondition(
-                    LogicalOperator::AND,
-                    c1
-                );
-            }
         }
 
-        if (token_iterator.not_empty() && token_iterator.peek().value == ")") {
+        else if (token_iterator.not_empty() && token_iterator.peek().value == ")") {
             if (np < 1)
                 throw ParsingException(") without (");
             np--;
@@ -140,8 +130,25 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
             token_iterator.next();
         }
 
-        if (token_iterator.not_empty())
-            logical_op = token_iterator.next();
+        else {
+            c1 = read_condition(token_iterator);
+            if (logical_op.value == "AND") {
+                current_condition.conditions.push_back(c1);
+            } else {
+                current_condition = LogicalCondition(
+                    LogicalOperator::AND,
+                    c1
+                );
+            }
+        }
+
+        if (token_iterator.not_empty()) {
+            if (token_iterator.peek().value == "AND" || token_iterator.peek().value == "OR") {
+                logical_op = token_iterator.next();
+            } else {
+                logical_op = Token("", Token::UNDEFINED);
+            }
+        }
     }
 
     if (current_condition.conditions.size() > 0)
