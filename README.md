@@ -2,10 +2,11 @@
 
 ## Build Instructions
 In order to build this project you just need to run these following commands:
-1. `cmake build` <br> *(Run this in `root` path of the repository).* <br> &rarr; This will create two executables:
+1. `cmake build` <br> *(Run this in `root` path of the repository).* 
+1. `cd build && make` <br> &rarr; This will create two executables:
    1. `src/main` &rarr; for running main. REPL like interface.
    2. `tests/unit_tests` &rarr; for running unit tests.
-2. `cd build && src/main` for running main.
+2. `src/main` for running main.
 
 ## Syntax description
 This project supports a subset of the sql language:
