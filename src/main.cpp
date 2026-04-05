@@ -5,43 +5,6 @@
 #include <variant>
 #include <filesystem>
 
-std::vector<Status> execute_queries(std::vector<std::string> queries, Engine &engine) {
-    std::vector<Status> outputs;
-
-    for (int i = 0; i < queries.size(); i++) {
-        std::vector<Token> t = tokenize_query(queries[i]);
-        Parser parser = Parser(t);
-        Command command = parser.get_command();
-        outputs.push_back(engine.execute_command(command));
-    }
-
-    return outputs;
-}
-
-std::vector<Status> execute_queries(std::vector<std::string> queries) {
-    Engine engine;
-    return execute_queries(queries, engine);
-}
-
-void test() {
-    std::vector<std::string> queries{
-        "CREATE TABLE t1 (a INTEGER, b INTEGER, c TEXT)",
-        "INSERT INTO t1 VALUES (2, 3, \"1\")",
-        "INSERT INTO t1 VALUES (4, 5, \"2\")",
-        "INSERT INTO t1 VALUES (4, 5, \"2.5\")",
-
-        "CREATE TABLE t2 (word TEXT, number INTEGER)",
-        "INSERT INTO t2 VALUES (\"abc\", 3)",
-        "INSERT INTO t2 VALUES (\"word2\", 4)",
-    };
-
-    Engine engine;
-    execute_queries(queries, engine);
-    std::ofstream file("tables.db");
-    engine.save_to_file(file);
-}
-
-
 int main() {
     Engine engine;
 
@@ -74,12 +37,9 @@ int main() {
                 Command command = parser.get_command();
                 Status status = engine.execute_command(command);
             }
-        }
-        catch (ExpectedException &e) {
+        } catch (ExpectedException &e) {
             std::cerr << "Caught expected exception: " << e.what() << std::endl;
-        }
-
-        catch (std::exception &e) {
+        } catch (std::exception &e) {
             std::cerr << "Caught un-expected exception: " << e.what() << std::endl;
             std::cout << "Command Failed" << std::endl;
         }
