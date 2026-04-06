@@ -104,11 +104,10 @@ TEST(ParserTests, WhereSelectTest) {
     );
 
     EXPECT_TRUE(
-        std::holds_alternative<LogicalCondition>(select_command.where.value().conditions[0])
+        std::holds_alternative<SimpleCondition>(select_command.where.value().conditions[0])
     );
 
-    auto simple = std::get<SimpleCondition>(
-        std::get<LogicalCondition>(select_command.where.value().conditions[0]).conditions[0]);
+    auto simple = std::get<SimpleCondition>(select_command.where.value().conditions[0]);
 
     EXPECT_EQ(
         simple,
@@ -161,16 +160,16 @@ TEST(ParserTests, WhereSelectTest_2) {
     auto part1 = std::get<LogicalCondition>(select_command.where.value().conditions[0]);
 
     EXPECT_EQ(part1.conditions.size(), 2);
-    EXPECT_EQ(part1.op, LogicalOperator::AND);
+    EXPECT_EQ(part1.op, LogicalOperator::OR);
 
     EXPECT_EQ(
         std::get<SimpleCondition>(part1.conditions[0]),
-        SimpleCondition("a", SimpleCondition::EQUALS, 5)
+        SimpleCondition("a", SimpleCondition::EQUALS, 2)
     );
 
     EXPECT_EQ(
         std::get<SimpleCondition>(part1.conditions[1]),
-        SimpleCondition("b", SimpleCondition::EQUALS, 7)
+        SimpleCondition("b", SimpleCondition::EQUALS, 5)
     );
 
     auto part2 = std::get<LogicalCondition>(select_command.where.value().conditions[1]);
@@ -182,40 +181,20 @@ TEST(ParserTests, WhereSelectTest_2) {
 
     EXPECT_EQ(
         part2.conditions.size(),
-        1
-    );
-
-    auto part2_inner = std::get<LogicalCondition>(part2.conditions[0]);
-
-    EXPECT_EQ(
-        part2_inner.conditions.size(),
         2
     );
 
     EXPECT_EQ(
-        part2_inner.op,
-        LogicalOperator::OR
-    );
-
-    std::cout << std::get<SimpleCondition>(std::get<LogicalCondition>(part2_inner.conditions[0]).conditions[0]) << std::endl;
-
-    EXPECT_EQ(
-        std::get<SimpleCondition>(std::get<LogicalCondition>(part2_inner.conditions[0]).conditions[0]),
+        std::get<SimpleCondition>(part2.conditions[0]),
         SimpleCondition(
-            "b",
-            SimpleCondition::EQUALS,
-            5
+            "a", SimpleCondition::EQUALS, 5
         )
     );
 
-    std::cout << std::get<SimpleCondition>(std::get<LogicalCondition>(part2_inner.conditions[1]).conditions[0]) << std::endl;
-
     EXPECT_EQ(
-    std::get<SimpleCondition>(std::get<LogicalCondition>(part2_inner.conditions[1]).conditions[0]),
+        std::get<SimpleCondition>(part2.conditions[1]),
         SimpleCondition(
-            "a",
-            SimpleCondition::EQUALS,
-            2
+            "b", SimpleCondition::EQUALS, 7
         )
     );
 }
@@ -256,4 +235,16 @@ TEST(ParserTests, InsertTest) {
         insert_command.values[2],
         Value(523)
     );
+}
+
+TEST(ParserTests, NewLogic) {
+    std::string condition = "a = 2 AND (a = 5 OR (b = 10 and c = 9)) AND b = 5";
+    std::vector<Token> t = tokenize_query(condition);
+    VectorIterator<Token> it = VectorIterator<Token>(t);
+
+    Condition result = parse_expr(it);
+    if (std::holds_alternative<SimpleCondition>(result))
+        std::cout << std::get<SimpleCondition>(result) << std::endl;
+    else
+        std::cout << std::get<LogicalCondition>(result) << std::endl;
 }

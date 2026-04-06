@@ -17,6 +17,8 @@ public:
     }
 };
 
+using Condition = std::variant<SimpleCondition, LogicalCondition>;
+
 class Parser {
 private:
     static Column get_column(VectorIterator<Token> &it);
@@ -30,5 +32,12 @@ public:
 
     static LogicalCondition parse_where(VectorIterator<Token> &token_iterator);
 };
+
+
+Condition parse_basic(VectorIterator<Token> &it);
+
+Condition parse_and_expr(VectorIterator<Token> &it);
+
+Condition parse_expr(VectorIterator<Token> &it);
 
 #endif

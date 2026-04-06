@@ -40,6 +40,61 @@ SimpleCondition read_condition(VectorIterator<Token> &token_iterator) {
     return SimpleCondition(column, SimpleCondition::EQUALS, value);
 }
 
+Condition parse_expr(VectorIterator<Token> &it) {
+    LogicalCondition output = LogicalCondition(
+        LogicalOperator::OR
+    );
+
+    output.conditions.push_back(parse_and_expr(it));
+
+    while (it.not_empty() && it.peek().value == "OR") {
+        it.next();
+        output.conditions.push_back(parse_and_expr(it));
+    }
+
+    if (output.conditions.size() > 1)
+        return output;
+    else
+        return output.conditions[0];
+}
+
+Condition parse_and_expr(VectorIterator<Token> &it) {
+    LogicalCondition output = LogicalCondition(
+        LogicalOperator::AND
+    );
+
+    output.conditions.push_back(parse_basic(it));
+
+    while (it.not_empty() && it.peek().value == "AND") {
+        it.next();
+        output.conditions.push_back(parse_basic(it));
+    }
+
+    if (output.conditions.size() > 1)
+        return output;
+    else
+        return output.conditions[0];
+}
+
+Condition parse_basic(VectorIterator<Token> &it) {
+    if (it.empty())
+        throw ParsingException("WHERE clause with no values");
+
+    if (it.peek().value == "(") {
+        it.next();
+
+        Condition result = parse_expr(
+            it
+        );
+
+        if (!it.expect(Token(")", Token::SYMBOL)))
+            throw ParsingException("Missing ) for (.");
+
+        return result;
+    }
+    return read_condition(it);
+}
+
 LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
     /**
      * @brief Parses a WHERE clause (possibly nested with paranthesses).
@@ -50,120 +105,16 @@ LogicalCondition Parser::parse_where(VectorIterator<Token> &token_iterator) {
     if (!token_iterator.not_empty())
         throw ParsingException("Where clause must come after WHERE");
 
-    std::stack<std::variant<Parentheses, LogicalCondition, LogicalOperator> > output;
+    Condition where = parse_expr(token_iterator);
+    if (std::holds_alternative<LogicalCondition>(where))
+        return std::get<LogicalCondition>(where);
 
-    SimpleCondition c1 = SimpleCondition();
-    LogicalCondition current_condition = LogicalCondition(
+    LogicalCondition output = LogicalCondition(
         LogicalOperator::AND
     );
+    output.conditions.push_back(where);
 
-    int np = 0;
-
-    Token logical_op = Token("", Token::UNDEFINED);
-
-    while (token_iterator.not_empty()) {
-        if (logical_op.value != "OR" and logical_op.value != "AND" and logical_op.value != "")
-            throw ParsingException("Invalid logical operation");
-        if (logical_op.value == "OR" && current_condition.conditions.size() > 0) {
-            output.push(current_condition);
-        }
-
-        if (token_iterator.peek().value == "(") {
-            np++;
-
-            if (logical_op.value != "OR" && current_condition.conditions.size() > 0)
-                // because we already pushed current_condition
-                output.push(current_condition);
-            if (logical_op.value == "AND")
-                output.push(LogicalOperator::AND);
-
-
-            output.push(Parentheses::OPEN);
-
-            token_iterator.next();
-
-            c1 = read_condition(token_iterator);
-            current_condition = LogicalCondition(
-                LogicalOperator::AND,
-                c1
-            );
-        }
-
-        else if (token_iterator.not_empty() && token_iterator.peek().value == ")") {
-            if (np < 1)
-                throw ParsingException(") without (");
-            np--;
-            output.push(current_condition);
-
-            LogicalCondition c = LogicalCondition(
-                LogicalOperator::OR
-            );
-            while (!std::holds_alternative<Parentheses>(output.top())) {
-                c.conditions.push_back(std::get<LogicalCondition>(output.top()));
-                output.pop();
-            }
-            output.pop();
-
-            if (!output.empty() && std::holds_alternative<LogicalOperator>(output.top())) {
-                LogicalCondition c_tag = LogicalCondition(
-                    std::get<LogicalOperator>(output.top())
-                );
-                output.pop();
-
-                c_tag.conditions.push_back(std::get<LogicalCondition>(output.top()));
-                output.pop();
-                c_tag.conditions.push_back(c);
-
-                // output.push(c_tag);
-                current_condition = LogicalCondition(
-                    LogicalOperator::AND
-                );
-                current_condition.conditions.push_back(c_tag);
-            } else
-                current_condition = LogicalCondition(
-                    LogicalOperator::AND,
-                    std::vector<std::variant<SimpleCondition, LogicalCondition> >{
-                        c
-                    }
-                );
-
-            token_iterator.next();
-        }
-
-        else {
-            c1 = read_condition(token_iterator);
-            if (logical_op.value == "AND") {
-                current_condition.conditions.push_back(c1);
-            } else {
-                current_condition = LogicalCondition(
-                    LogicalOperator::AND,
-                    c1
-                );
-            }
-        }
-
-        if (token_iterator.not_empty()) {
-            if (token_iterator.peek().value == "AND" || token_iterator.peek().value == "OR") {
-                logical_op = token_iterator.next();
-            } else {
-                logical_op = Token("", Token::UNDEFINED);
-            }
-        }
-    }
-
-    if (current_condition.conditions.size() > 0)
-        output.push(current_condition);
-
-    LogicalCondition final_output = LogicalCondition(LogicalOperator::OR);
-    while (!output.empty()) {
-        if (std::holds_alternative<Parentheses>(output.top()))
-            throw ParsingException("Still ) in output");
-
-        final_output.conditions.push_back(std::get<LogicalCondition>(output.top()));
-        output.pop();
-    }
-
-    return final_output;
+    return output;
 }
 
 
@@ -353,17 +304,6 @@ Command Parser::get_command() {
         return DeleteFromCommand(
             table, where
         );
-    } else if (it.peek().value == "DROP") {
-        it.next();
-        if (it.empty() || it.peek().type != Token::KEYWORD || it.peek().value != "TABLE")
-            throw ParsingException("TABLE Must come after DROP");
-
-        it.next();
-
-        if (it.empty())
-            throw ParsingException("Table name must come after TABLE keyword");
-
-        return DropTableCommand(it.peek().value);
     } else {
         throw ParsingException("Not an available command.");
     }

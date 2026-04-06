@@ -37,7 +37,7 @@ struct SelectCommand {
     SelectCommand(const std::vector<std::string> &columns, const bool all, const std::string &table_name) : columns(columns), all(all), table_name(table_name) {}
 };
 
-inline std::ostream& operator<<(std::ostream &os, const SelectCommand c) {
+inline std::ostream& operator<<(std::ostream &os, const SelectCommand &c) {
     os << "[SelectCommand] {columns = " << c.columns << ", all = " << c.all << ", table_name = " << c.table_name << ", where = " << c.where << "}";
     return os;
 }
@@ -46,7 +46,7 @@ struct DeleteFromCommand {
     std::string table;
     LogicalCondition where;
 
-    DeleteFromCommand(std::string &table, LogicalCondition &where): table(table), where(where) {}
+    DeleteFromCommand(const std::string &table, const LogicalCondition &where): table(table), where(where) {}
 };
 
 using Command = std::variant<SelectCommand, CreateTableCommand, InsertCommand, DropTableCommand, DeleteFromCommand>;

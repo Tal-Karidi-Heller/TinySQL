@@ -24,7 +24,7 @@ public:
                    typename std::vector<T>::iterator end) : start(start), end(end) {
     }
 
-    VectorIterator(std::vector<T> vector) : VectorIterator(vector.begin(), vector.end()) {
+    VectorIterator(std::vector<T> &vector) : VectorIterator(vector.begin(), vector.end()) {
     }
 
     inline bool not_empty() {

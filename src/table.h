@@ -48,7 +48,7 @@ inline std::ostream &operator<<(std::ostream &os, const Column c) {
 struct Table {
     std::string name;
     std::vector<Column> columns;
-    std::vector<std::vector<Value> > rows;
+    std::vector<std::vector<Value>> rows;
 
     std::optional<std::tuple<Column, int> > get_column(std::string &column_name) {
         int i = 0;
